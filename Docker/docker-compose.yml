@@ -1,0 +1,12 @@
+services:
+  psql:
+    image: postgres:18
+    command: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: aRVt74A29_6f
+      POSTGRES_DB: TestDB
+    ports:
+      - '8000:5432'
+    volumes:
+      - ../Database/init_database.d:/docker-entrypoint-initdb.d
