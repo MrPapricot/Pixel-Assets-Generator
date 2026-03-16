@@ -15,6 +15,6 @@ services:
       context: ../CommandProjectBackend
       target: start
     env_file:
-      - ../CommandProjectBackend/server.env
+      - server.env
     ports:
       - '8080:8080'
