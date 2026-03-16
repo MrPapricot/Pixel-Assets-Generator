@@ -1,2 +1,3 @@
-CommandProjectBackend/target
+/CommandProjectBackend/target
 .idea
+/CommandProjectBackend/server.env
