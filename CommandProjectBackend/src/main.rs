@@ -1,6 +1,5 @@
 use axum::http::StatusCode;
 use axum::routing::get;
-use dotenv;
 
 mod handlers;
 
@@ -35,10 +34,7 @@ fn create_api_key_whitelist() -> impl Fn(
 
 #[tokio::main]
 async fn main() {
-    if let Err(_) = dotenv::from_filename("server.env") {
-        eprintln!("No server.env provided");
-    }
-    let listener = tokio::net::TcpListener::bind("localhost:8080")
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:8080")
         .await
         .unwrap();
     let app: axum::Router<()> = axum::Router::new()

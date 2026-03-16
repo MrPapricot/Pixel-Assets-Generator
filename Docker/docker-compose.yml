@@ -10,3 +10,11 @@ services:
       - '8000:5432'
     volumes:
       - ../Database/init_database.d:/docker-entrypoint-initdb.d
+  backend_server:
+    build:
+      context: ../CommandProjectBackend
+      target: start
+    env_file:
+      - ../CommandProjectBackend/server.env
+    ports:
+      - '8080:8080'
