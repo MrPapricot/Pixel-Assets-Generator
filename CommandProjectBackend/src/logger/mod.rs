@@ -2,9 +2,9 @@ pub(crate) enum LogLevel {
     Info,
     Warning,
     Error,
-    CriticalError
+    CriticalError,
 }
 
-pub trait Logger: Clone {
+pub trait Logger: Clone + Sync + Send {
     fn log(&self, message: &str, log_level: LogLevel);
 }

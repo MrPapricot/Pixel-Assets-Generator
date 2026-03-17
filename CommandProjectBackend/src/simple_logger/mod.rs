@@ -1,4 +1,4 @@
-use crate::logger::{Logger, LogLevel};
+use crate::logger::{LogLevel, Logger};
 use chrono;
 
 #[derive(Copy, Clone)]

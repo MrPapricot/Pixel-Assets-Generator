@@ -9,10 +9,10 @@ pub(crate) struct AppState<L: Logger> {
 impl<L: Logger> AppState<L> {
     pub fn new(logger: L) -> AppState<L> {
         AppState {
-            logger: Arc::new(logger)
+            logger: Arc::new(logger),
         }
     }
-    
+
     pub fn get_logger(&self) -> Arc<L> {
         Arc::clone(&self.logger)
     }
