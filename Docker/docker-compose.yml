@@ -10,6 +10,13 @@ services:
       - '8000:5432'
     volumes:
       - ../Database/init_database.d:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
   backend_server:
     build:
       context: ../CommandProjectBackend
@@ -18,3 +25,6 @@ services:
       - server.env
     ports:
       - '8080:8080'
+    depends_on:
+      psql:
+        condition: service_healthy
