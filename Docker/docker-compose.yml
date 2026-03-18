@@ -4,7 +4,7 @@ services:
     command: postgres
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: aRVt74A29_6f
+      POSTGRES_PASSWORD: 1234
       POSTGRES_DB: TestDB
     ports:
       - '8000:5432'

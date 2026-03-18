@@ -8,3 +8,5 @@ tokio = {version = "1.49.0", features = ["full"]}
 axum = {version = "0.8.8", features = ["tokio"]}
 chrono = {version = "0.4.44"}
 serde_json = {version = "1.0.149"}
+sqlx = {version = "0.8.6", features = ["runtime-tokio", "postgres", "sqlx-postgres"]}
+log = "0.4.29"
