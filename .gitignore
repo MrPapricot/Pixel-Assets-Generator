@@ -1,3 +1,4 @@
 /CommandProjectBackend/target
 .idea
-/Docker/server.env
+/CommandProjectBackend/Cargo.lock
+**/*.env

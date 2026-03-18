@@ -2,10 +2,12 @@ services:
   psql:
     image: postgres:18
     command: postgres
+    env_file:
+      - common.env
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 1234
-      POSTGRES_DB: TestDB
+      POSTGRES_USER: ${DB_SUPERUSER:?}
+      POSTGRES_PASSWORD: ${DB_SUPERUSER_PASSWORD:?}
+      POSTGRES_DB: ${DB_NAME:?}
     ports:
       - '8000:5432'
     volumes:
@@ -23,6 +25,7 @@ services:
       target: start
     env_file:
       - server.env
+      - common.env
     ports:
       - '8080:8080'
     depends_on:

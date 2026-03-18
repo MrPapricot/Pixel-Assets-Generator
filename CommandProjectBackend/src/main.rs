@@ -81,26 +81,6 @@ async fn main() {
         Err(err) => 5432,
     };
     let database_name = env::var("DB_NAME").unwrap_or("TestDB".to_string());
-    let database_min_connections = match env::var("DB_MIN_CONNECTIONS") {
-        Ok(port) => port.parse::<u32>().unwrap_or_else(|_| {
-            logger.log(
-                "DB_MIN_CONNECTIONS from ENV must be a number",
-                LogLevel::CriticalError,
-            );
-            panic!();
-        }),
-        Err(err) => 1,
-    };
-    let database_max_connections = match env::var("DB_MAX_CONNECTIONS") {
-        Ok(port) => port.parse::<u32>().unwrap_or_else(|_| {
-            logger.log(
-                "DB_MAX_CONNECTIONS from ENV must be a number",
-                LogLevel::CriticalError,
-            );
-            panic!();
-        }),
-        Err(err) => 5,
-    };
     let database_user = env::var("DB_USER").unwrap_or("postgres".to_string());
     let database_user_password = env::var("DB_USER_PASSWORD").unwrap_or("1234".to_string());
 
@@ -119,10 +99,9 @@ async fn main() {
     let db_url = format!(
         "postgresql://{database_user}:{database_user_password}@{database_host}:{database_port}/{database_name}"
     );
+    logger.log(format!("Connecting to DB {db_url}").as_str(), LogLevel::Info);
     let db_adapter = PostgresDBAdapter::connect(
-        db_url.as_str(),
-        database_min_connections,
-        database_max_connections,
+        db_url.as_str()
     )
     .await;
     let db_adapter = match db_adapter {

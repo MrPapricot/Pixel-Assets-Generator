@@ -8,14 +8,8 @@ pub(crate) struct PostgresDBAdapter {
 }
 
 impl DBAdapter for PostgresDBAdapter {
-    async fn connect(
-        url: &str,
-        min_connections: u32,
-        max_connections: u32,
-    ) -> Result<Self, sqlx::Error> {
+    async fn connect(url: &str) -> Result<Self, sqlx::Error> {
         let pool = PgPoolOptions::new()
-            .min_connections(min_connections)
-            .max_connections(max_connections)
             .connect(url)
             .await?;
         Ok(PostgresDBAdapter { pool })
