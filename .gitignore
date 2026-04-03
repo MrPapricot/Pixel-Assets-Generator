@@ -1,4 +1,4 @@
-/CommandProjectBackend/target
+**/target
 .idea
-/CommandProjectBackend/Cargo.lock
+**/Cargo.lock
 **/*.env

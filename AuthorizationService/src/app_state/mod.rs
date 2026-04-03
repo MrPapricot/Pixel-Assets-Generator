@@ -1,15 +1,18 @@
+use crate::database_adapter::DBAdapter;
 use crate::logger::{LogLevel, Logger};
 use std::sync::{Arc, Mutex};
 
 #[derive(Clone)]
-pub(crate) struct AppState {
+pub(crate) struct AppState<DB: DBAdapter> {
     logger: Arc<Mutex<Box<dyn Logger>>>,
+    database_adapter: Arc<DB>,
 }
 
-impl AppState {
-    pub fn new(logger: Box<dyn Logger>) -> AppState {
+impl<DB: DBAdapter> AppState<DB> {
+    pub fn new(logger: Box<dyn Logger>, database_adapter: DB) -> AppState<DB> {
         AppState {
             logger: Arc::new(Mutex::new(logger)),
+            database_adapter: Arc::new(database_adapter),
         }
     }
 
