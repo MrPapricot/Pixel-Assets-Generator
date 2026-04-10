@@ -1,8 +1,10 @@
 use std::env;
+use std::sync::{Arc, Mutex};
 
 mod app_state;
 mod database_adapter;
 mod handlers;
+mod jwt_token_manager;
 mod logger;
 mod postgres_database_adapter;
 mod simple_logger;
@@ -52,7 +54,7 @@ async fn main() {
         LogLevel::Info,
     );
 
-    let database_adapter = match PostgresDBAdapter::connect(database_url.as_str()).await {
+    let database_adapter = match PostgresDBAdapter::connect(database_url).await {
         Ok(adapter) => adapter,
         Err(error) => {
             logger.log(
@@ -64,10 +66,14 @@ async fn main() {
     };
     logger.log("Successfully connected to database", LogLevel::Info);
 
-    let state = AppState::new(Box::new(logger), database_adapter);
+    let state = AppState::new(
+        Arc::new(Mutex::new(logger)),
+        Arc::new(database_adapter.clone()),
+    );
 
     let app = axum::routing::Router::new()
         .route("/", get(handlers::default_handler))
+        .route("/new_user", post(handlers::create_user_handler))
         .with_state(state.clone());
 
     let listener =

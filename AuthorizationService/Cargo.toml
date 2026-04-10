@@ -9,3 +9,8 @@ sqlx = {version = "0.8.6", features = ["runtime-tokio", "postgres", "sqlx-postgr
 axum = {version = "0.8.8", features = ["tokio"]}
 chrono = {version = "0.4.44", features = ["serde"]}
 serde_json = {version = "1.0.149"}
+serde = { version = "1.0.228", features = ["derive"] }
+rand = "0.8.5"
+hmac = {version = "0.13.0"}
+sha2 = {version = "0.11.0"}
+jsonwebtoken = {version = "10.3.0", features = ["rust_crypto"]}
