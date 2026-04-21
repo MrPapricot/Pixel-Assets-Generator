@@ -1,0 +1,23 @@
+{
+    "technical": {
+        "base_resolution": "32x32",
+        "width": 3,
+        "height": 2,
+        "color_mode": "true_color",
+        "outline": "no_outline"
+    },
+    "visual": {
+        "stylization": "dithered",
+        "lighting": "cell_shaded",
+        "projection": "isometric_2_1"
+    },
+    "functional": {
+        "asset_type": "tile"
+    },
+    "comfyui": {
+    "url": "http://127.0.0.1:8188",
+    "use_lightning_lora": true,
+    "random_seed": true,
+    "timeout": 180
+  }
+}

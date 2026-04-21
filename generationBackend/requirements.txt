@@ -1,0 +1,9 @@
+rembg[gpu]
+Pillow
+matplotlib
+numpy
+fastapi
+pydantic
+uvicorn
+python-multipart
+requests
