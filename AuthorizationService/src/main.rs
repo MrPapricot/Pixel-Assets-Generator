@@ -12,16 +12,18 @@ mod simple_logger;
 use logger::{LogLevel, Logger};
 use simple_logger::SimpleLogger;
 
-use crate::database_adapter::DBAdapter;
 use crate::postgres_database_adapter::PostgresDBAdapter;
 
+#[allow(unused_imports)]
 use axum::routing::{delete, get, post, put};
 
 use app_state::AppState;
 
+// Главная точка входа в сервис авторизации
 #[tokio::main]
 async fn main() {
     let logger = SimpleLogger::new();
+
     let database_host = env::var("DB_HOST").unwrap_or("localhost".to_string());
     let database_port = match env::var("DB_PORT") {
         Ok(port) => port.parse::<u16>().unwrap_or_else(|_| {
@@ -74,6 +76,7 @@ async fn main() {
     let app = axum::routing::Router::new()
         .route("/", get(handlers::default_handler))
         .route("/new_user", post(handlers::create_user_handler))
+        .route("/get_user", get(handlers::get_user_handler))
         .with_state(state.clone());
 
     let listener =
@@ -98,3 +101,5 @@ async fn main() {
 
     axum::serve(listener, app).await.unwrap();
 }
+
+// TODO Опционально перейти на Protobuf, но в принципе и так норм

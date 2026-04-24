@@ -29,10 +29,15 @@ async fn main() {
 
     let state = AppState::new(Box::new(logger));
 
-    let listener = match tokio::net::TcpListener::bind(format!("{server_host}:{server_port}")).await {
+    let listener = match tokio::net::TcpListener::bind(format!("{server_host}:{server_port}")).await
+    {
         Ok(listener) => listener,
         Err(error) => {
-            state.log(format!("Unable to listen to {server_host}:{server_port}; Error occurred: {error}").as_str(), LogLevel::CriticalError);
+            state.log(
+                format!("Unable to listen to {server_host}:{server_port}; Error occurred: {error}")
+                    .as_str(),
+                LogLevel::CriticalError,
+            );
             panic!()
         }
     };
@@ -48,3 +53,5 @@ async fn main() {
 
     axum::serve(listener, app).await.unwrap();
 }
+
+// TODO Сделать подсос к сервису авторизации

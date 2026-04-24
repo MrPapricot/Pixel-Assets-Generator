@@ -1,10 +1,10 @@
-use axum::extract::State;
+use crate::app_state::AppState;
+use crate::logger::LogLevel;
 use axum::Json;
+use axum::extract::State;
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use serde_json::json;
-use crate::app_state::AppState;
-use crate::logger::LogLevel;
 
 pub(crate) async fn health_check(State(state): State<AppState>) -> impl IntoResponse {
     let now = chrono::Utc::now();

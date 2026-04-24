@@ -1,6 +1,6 @@
 use crate::database_adapter::custom_db_error::BaseDBError;
 use crate::database_adapter::{DBAdapter, models};
-use crate::jwt_token_manager::JWTTokenManager;
+use crate::jwt_token_manager::{JWTDecodingError, JWTTokenManager};
 use crate::logger::{LogLevel, Logger};
 use std::env;
 use std::sync::{Arc, Mutex};
@@ -24,7 +24,7 @@ impl AppState {
         match token_manager {
             Err(err) => {
                 logger.lock().unwrap().log(
-                    format!("Error inializing token manager. Error is: {:?}", err).as_str(),
+                    format!("Error initializing token manager. Error is: {:?}", err).as_str(),
                     LogLevel::CriticalError,
                 );
                 panic!()
@@ -44,6 +44,7 @@ impl AppState {
             .log(message, log_level);
     }
 
+    #[allow(dead_code)]
     pub(crate) async unsafe fn get_all_users_limited(
         &self,
         limit: u64,
@@ -62,7 +63,21 @@ impl AppState {
             .await?)
     }
 
+    pub(crate) async fn get_user_by_uuid(
+        &self,
+        uuid: sqlx::types::Uuid,
+    ) -> Result<models::User, BaseDBError> {
+        Ok(self.database_adapter.get_user_by_uuid(uuid).await?)
+    }
+
     pub(crate) fn get_jwt_token(&self, uuid: sqlx::types::Uuid) -> String {
-        self.token_manager.get_jwt_token(uuid.to_string()).unwrap()
+        self.token_manager.get_jwt_token(uuid)
+    }
+
+    pub(crate) fn get_uuid_from_token(
+        &self,
+        token: &[u8],
+    ) -> Result<sqlx::types::Uuid, JWTDecodingError> {
+        self.token_manager.get_uuid_from_token(token)
     }
 }

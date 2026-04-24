@@ -57,25 +57,23 @@ impl DBAdapter for PostgresDBAdapter {
             .bind(password_hash)
             .fetch_one(&self.pool)
             .await;
-            match res {
-                Ok(ReturnType(uuid)) => return Ok(uuid),
-                Err(sqlx_err) => {
-                    return match sqlx_err {
-                        sqlx::Error::Database(db_err) => {
-                            if let Some(pg_err) = db_err.try_downcast_ref::<PgDatabaseError>() {
-                                if pg_err.is_unique_violation() {
-                                    Err(BaseDBError::UniqueViolation)
-                                } else {
-                                    Err(BaseDBError::BaseError(sqlx::Error::Database(db_err)))
-                                }
+            return match res {
+                Ok(ReturnType(uuid)) => Ok(uuid),
+                Err(sqlx_err) => match sqlx_err {
+                    sqlx::Error::Database(db_err) => {
+                        if let Some(pg_err) = db_err.try_downcast_ref::<PgDatabaseError>() {
+                            if pg_err.is_unique_violation() {
+                                Err(BaseDBError::UniqueViolation)
                             } else {
                                 Err(BaseDBError::BaseError(sqlx::Error::Database(db_err)))
                             }
+                        } else {
+                            Err(BaseDBError::BaseError(sqlx::Error::Database(db_err)))
                         }
-                        not_db_err => Err(BaseDBError::BaseError(not_db_err)),
-                    };
-                }
-            }
+                    }
+                    not_db_err => Err(BaseDBError::BaseError(not_db_err)),
+                },
+            };
         })
     }
 

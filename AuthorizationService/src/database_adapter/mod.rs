@@ -6,9 +6,9 @@ pub(crate) mod models {
     #[derive(sqlx::FromRow, Debug)]
     pub(crate) struct User {
         uuid: sqlx::types::Uuid,
-        email: String,
+        pub(crate) email: String,
         password_hash: String,
-        created_at: chrono::DateTime<chrono::Utc>,
+        pub(crate) created_at: chrono::DateTime<chrono::Utc>,
     }
 }
 

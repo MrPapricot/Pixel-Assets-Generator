@@ -31,3 +31,13 @@ services:
     depends_on:
       psql:
         condition: service_healthy
+
+  authorization_service:
+    build:
+      context: ../AuthorizationService
+      target: start
+    env_file:
+      - common.env
+      - auth.env
+    ports:
+      - '8070:8070'
