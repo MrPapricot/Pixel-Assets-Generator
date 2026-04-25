@@ -1,0 +1,189 @@
+{
+  "info": {
+    "_postman_id": "f1f02d56-5c43-4684-9b65-b5a2eb69ea8c",
+    "name": "generation API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "49752474",
+    "_collection_link": "https://go.postman.co/collection/49752474-f1f02d56-5c43-4684-9b65-b5a2eb69ea8c?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{domain}}/health",
+          "host": [
+            "{{domain}}"
+          ],
+          "path": [
+            "health"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Root",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{domain}}",
+          "host": [
+            "{{domain}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "transform",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "uuid": "99ff0ccb-3516-4c82-81cc-63f5f57fb49e",
+              "src": "/C:/Users/BOGDAN/Desktop/Pixel-Assets-Generator/generationBackend/input.png"
+            },
+            {
+              "key": "config",
+              "type": "text",
+              "uuid": "1d84f67a-28f4-4e1a-a6eb-d43b03db1585",
+              "value": "{\"technical\":{\"base_resolution\":\"32x32\",\"width\":3,\"height\":2,\"color_mode\":\"true_color\",\"outline\":\"no_outline\"},\"visual\":{\"stylization\":\"dithered\",\"lighting\":\"cell_shaded\",\"projection\":\"isometric_2_1\"},\"functional\":{\"asset_type\":\"tile\"},\"comfyui\":{\"url\":\"http://127.0.0.1:8188\",\"use_lightning_lora\":true,\"random_seed\":true,\"timeout\":180}}"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{domain}}/api/v1/transform/file",
+          "host": [
+            "{{domain}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "transform",
+            "file"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "status",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{domain}}/api/v1/status/d1cee2c3-ea96-43c1-89e6-661e7c676677",
+          "host": [
+            "{{domain}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "status",
+            "d1cee2c3-ea96-43c1-89e6-661e7c676677"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "download",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{domain}}/api/v1/download/d1cee2c3-ea96-43c1-89e6-661e7c676677",
+          "host": [
+            "{{domain}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "download",
+            "d1cee2c3-ea96-43c1-89e6-661e7c676677"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "delete",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{domain}}/api/v1/tasks/d1cee2c3-ea96-43c1-89e6-661e7c676677",
+          "host": [
+            "{{domain}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tasks",
+            "d1cee2c3-ea96-43c1-89e6-661e7c676677"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "base config",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{domain}}/api/v1/config/presets",
+          "host": [
+            "{{domain}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "config",
+            "presets"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "domain",
+      "value": "http://127.0.0.1:8001"
+    }
+  ]
+}

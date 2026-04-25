@@ -1,0 +1,40 @@
+{
+    "technical": {
+        "base_resolution": "32x32",
+        "width": 1,
+        "height": 1,
+        "color_mode": "true_color",
+        "outline": "no_outline"
+    },
+    "visual": {
+        "stylization": "dithered",
+        "lighting": "cell_shaded",
+        "projection": "top_down"
+    },
+    "functional": {
+        "asset_type": "object"
+    },
+    "comfyui": {
+    "url": "http://127.0.0.1:8188",
+    "use_lightning_lora": true,
+    "random_seed": true
+  }
+}
+
+//# Возможные значения параметров:
+//# Технические:
+//# base_resolution: "16x16", "24x24", "32x32", "48x48", "64x64", "128x128"
+//#
+//# color_mode: "monochrome", "limited_4", "limited_8", "limited_16", "limited_32", "limited_256", "true_color"
+//#
+//# outline: "black_outline", "colored_outline", "no_outline"
+//#
+//# Визуальные:
+//# stylization: "minimalist", "clean", "dithered", "high_detail"
+//#
+//# lighting: "flat", "cell_shaded", "smooth"
+//#
+//# projection: "side_view", "top_down", "isometric_2_1", "isometric_1_1"
+//#
+//# Функциональные:
+//# asset_type: "sprite", "object", "tile"
