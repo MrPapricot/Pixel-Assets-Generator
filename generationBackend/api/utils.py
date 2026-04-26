@@ -123,6 +123,9 @@ class PixelArtTransformer:
         outline = tech['outline']
         img = self.apply_outline(img, outline)
 
+        # Удаление фона после ИИ
+        img = self.remove_background(img)
+        
         # Сохранение результата
         img.save(output_path, format='PNG')
         print(f"✅ Результат сохранен: {output_path}")
