@@ -124,3 +124,8 @@ pub(crate) async fn get_user_handler(
         }
     }
 }
+
+
+pub(crate) async fn healthcheck() -> impl IntoResponse{
+    (StatusCode::OK, Json(json!({"Status": "Active"})))
+}
