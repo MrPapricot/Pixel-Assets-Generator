@@ -405,6 +405,6 @@ if __name__ == "__main__":
         "api:app",
         host="127.0.0.1",
         port=8001,
-        reload=True,
+        reload=False,
         log_level="info"
     )

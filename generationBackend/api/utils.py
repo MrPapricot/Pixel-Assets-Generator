@@ -71,7 +71,7 @@ class PixelArtTransformer:
         
         # Проверка функциональных параметров
         func = self.config['functional']
-        valid_asset_types = ['character', 'prop', 'tile']
+        valid_asset_types = ["sprite", "object", "tile"]
         if func.get('asset_type') not in valid_asset_types:
             raise ValueError(f"Некорректный тип ассета. Допустимые: {valid_asset_types}")
         
@@ -107,9 +107,6 @@ class PixelArtTransformer:
         # Применение стилизации
         stylization = vis['stylization']
         img = self.apply_stylization(img, stylization) #!!!!!!!!!!!!!!!!!!!!!!!
-
-        # Удаление фона после ии
-        img = self.remove_background(img)
 
         # Пикселизация
         resolution = tech['base_resolution']
@@ -216,7 +213,7 @@ class PixelArtTransformer:
             input_image,
             session=session,
             post_process_mask=True,  # Улучшает качество маски
-            alpha_matting=True,  # Использовать alpha matting для краев
+            alpha_matting=False,  # Использовать alpha matting для краев
             alpha_matting_foreground_threshold=240,
             alpha_matting_background_threshold=10,
             alpha_matting_erode_structure_size=10
@@ -496,7 +493,7 @@ class PixelArtTransformer:
             print(f"❌ Неожиданная ошибка: {e}")
             return img
 
-    def _wait_for_comfyui_result(self, comfyui_url: str, prompt_id: str, timeout: int = 5400) -> Image.Image:
+    def _wait_for_comfyui_result(self, comfyui_url: str, prompt_id: str, timeout: int = 10800) -> Image.Image:
         """
         Ожидание и получение результата из ComfyUI
 

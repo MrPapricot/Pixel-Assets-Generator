@@ -1,8 +1,7 @@
 # Виртуальное окружение
-.venv/
-venv/
-env/
-ENV/
+generationBackend/api/.venv/
+generationBackend/api/venv/
+generationBackend/comfyui/comfy_venv/
 
 # Файлы Python
 __pycache__/
@@ -11,11 +10,10 @@ __pycache__/
 *.egg-info/
 
 # Временные файлы
-uploads/
-results/
+generationBackend/api/uploads/
+generationBackend/api/results/
 *.jpg
 *.png
-!example.png
 
 # IDE
 .idea/
