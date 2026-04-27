@@ -20,31 +20,110 @@ use app_state::AppState;
 async fn main() {
     let logger = SimpleLogger::new();
 
-    let database_host = env::var("DB_HOST").unwrap_or("localhost".to_string());
-    let database_port = match env::var("DB_PORT") {
-        Ok(port) => port.parse::<u16>().unwrap_or_else(|_| {
-            logger.log("DB_PORT from ENV must be a number", LogLevel::CriticalError);
-            panic!();
-        }),
-        Err(_) => 5432,
+    let database_host = {
+        const TARGET_VAR: &str = "DB_HOST";
+        env::var(TARGET_VAR).unwrap_or_else(|_| {
+            const DEFAULT_VALUE: &str = "localhost";
+            logger.log(
+                format!("\"{TARGET_VAR}\" is not defined. Using default value: \"{DEFAULT_VALUE}\"").as_str(),
+                LogLevel::Warning,
+            );
+            DEFAULT_VALUE.to_string()
+        })
     };
-    let database_user = env::var("DB_USER").unwrap_or("postgres".to_string());
-    let database_user_password = env::var("DB_USER_PASSWORD").unwrap_or("1234".to_string());
-    let database_name = env::var("DB_NAME").unwrap_or("TestDB".to_string());
+
+    let database_port = {
+        const TARGET_VAR: &str = "DB_PORT";
+        const DEFAULT_VALUE: u16 = 5432;
+        match env::var(TARGET_VAR) {
+            Ok(port) => port.parse::<u16>().unwrap_or_else(|_| {
+                logger.log(
+                    format!("\"{TARGET_VAR}\" must be a number. Using default value: \"{DEFAULT_VALUE}\"").as_str(),
+                    LogLevel::Warning,
+                );
+                DEFAULT_VALUE
+            }),
+            Err(_) => {
+                logger.log(
+                    format!("\"{TARGET_VAR}\" is not defined. Using default value: \"{DEFAULT_VALUE}\"").as_str(),
+                    LogLevel::Warning,
+                );
+                DEFAULT_VALUE
+            },
+        }
+    };
+
+    let database_user = {
+        const TARGET_VAR: &str = "DB_USER";
+        env::var(TARGET_VAR).unwrap_or_else(|_| {
+            const DEFAULT_VALUE: &str = "postgres";
+            logger.log(
+                format!("\"{TARGET_VAR}\" is not defined. Using default value: \"{DEFAULT_VALUE}\"").as_str(),
+                LogLevel::Warning,
+            );
+            DEFAULT_VALUE.to_string()
+        })
+    };
+
+    let database_user_password = {
+        const TARGET_VAR: &str = "DB_USER_PASSWORD";
+        env::var(TARGET_VAR).unwrap_or_else(|_| {
+            const DEFAULT_VALUE: &str = "1234";
+            logger.log(
+                format!("\"{TARGET_VAR}\" is not defined. Using default value: \"{DEFAULT_VALUE}\"").as_str(),
+                LogLevel::Warning,
+            );
+            DEFAULT_VALUE.to_string()
+        })
+    };
+
+    let database_name = {
+        const TARGET_VAR: &str = "DB_NAME";
+        env::var(TARGET_VAR).unwrap_or_else(|_| {
+            const DEFAULT_VALUE: &str = "TestDB";
+            logger.log(
+                format!("\"{TARGET_VAR}\" is not defined. Using default value: \"{DEFAULT_VALUE}\"").as_str(),
+                LogLevel::Warning,
+            );
+            DEFAULT_VALUE.to_string()
+        })
+    };
+
     let database_url = format!(
         "postgresql://{database_user}:{database_user_password}@{database_host}:{database_port}/{database_name}"
     );
 
-    let service_host = env::var("AUTH_HOST").unwrap_or("localhost".to_string());
-    let service_port = match env::var("AUTH_PORT") {
-        Ok(port) => port.parse::<u16>().unwrap_or_else(|_| {
+    let service_host = {
+        const TARGET_VAR: &str = "AUTH_HOST";
+        env::var(TARGET_VAR).unwrap_or_else(|_| {
+            const DEFAULT_VALUE: &str = "localhost";
             logger.log(
-                "AUTH_PORT from ENV must be a number",
-                LogLevel::CriticalError,
+                format!("\"{TARGET_VAR}\" is not defined. Using default value: \"{DEFAULT_VALUE}\"").as_str(),
+                LogLevel::Warning,
             );
-            panic!();
-        }),
-        Err(_) => 8070,
+            DEFAULT_VALUE.to_string()
+        })
+    };
+
+    let service_port = {
+        const TARGET_VAR: &str = "AUTH_PORT";
+        const DEFAULT_VALUE: u16 = 8070;
+        match env::var(TARGET_VAR) {
+            Ok(port) => port.parse::<u16>().unwrap_or_else(|_| {
+                logger.log(
+                    format!("\"{TARGET_VAR}\" must be a number. Using default value: \"{DEFAULT_VALUE}\"").as_str(),
+                    LogLevel::Warning,
+                );
+                DEFAULT_VALUE
+            }),
+            Err(_) => {
+                logger.log(
+                    format!("\"{TARGET_VAR}\" is not defined. Using default value: \"{DEFAULT_VALUE}\"").as_str(),
+                    LogLevel::Warning,
+                );
+                DEFAULT_VALUE
+            },
+        }
     };
 
     logger.log(

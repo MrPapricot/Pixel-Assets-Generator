@@ -1,11 +1,11 @@
 #!/bin/bash
 set -e
 
-    export PGPASSWORD="$DB_SUPERUSER_PASSWORD"
+    export PGPASSWORD="$POSTGRES_PASSWORD"
 
     echo "!!! Creating tables in  ${DB_NAME}..."
 
-    psql -v ON_ERROR_STOP=1 --username "$DB_SUPERUSER" --dbname "$DB_NAME" <<-EOSQL
+    psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
 
 CREATE TABLE IF NOT EXISTS users (
                                      uuid uuid PRIMARY KEY DEFAULT uuidv7(),

@@ -4,13 +4,19 @@ WORKDIR /usr/src/app
 
 RUN rustup target add x86_64-unknown-linux-musl
 
-COPY Cargo.toml Cargo.lock ./
-COPY src src
+COPY ./logger/Cargo.toml ./logger/Cargo.toml
+COPY ./logger/src ./logger/src
+
+COPY ./CommandProjectBackend/Cargo.toml ./CommandProjectBackend/
+COPY ./CommandProjectBackend/src ./CommandProjectBackend/src
+
+WORKDIR /usr/src/app/CommandProjectBackend
+
 RUN cargo build --target x86_64-unknown-linux-musl --release
 
 FROM alpine:3.17 AS start
 
-COPY --from=builder /usr/src/app/target/x86_64-unknown-linux-musl/release/CommandProjectBackend /usr/local/bin/CommandProjectBackend
+COPY --from=builder /usr/src/app/CommandProjectBackend/target/x86_64-unknown-linux-musl/release/CommandProjectBackend /usr/local/bin/CommandProjectBackend
 
 EXPOSE 8080
 

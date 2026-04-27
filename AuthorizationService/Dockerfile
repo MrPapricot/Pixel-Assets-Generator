@@ -4,12 +4,18 @@ WORKDIR /usr/src/app
 
 RUN rustup target add x86_64-unknown-linux-musl
 
-COPY Cargo.toml Cargo.lock ./
-COPY src src
+COPY ./logger/Cargo.toml ./logger/Cargo.toml
+COPY ./logger/src ./logger/src
+
+COPY ./AuthorizationService/Cargo.toml ./AuthorizationService/
+COPY ./AuthorizationService/src ./AuthorizationService/src
+
+WORKDIR /usr/src/app/AuthorizationService
+
 RUN cargo build --target x86_64-unknown-linux-musl --release
 
 FROM alpine:3.17 AS start
 
-COPY --from=builder /usr/src/app/target/x86_64-unknown-linux-musl/release/AuthorizationService /usr/local/bin/AuthorizationService
+COPY --from=builder /usr/src/app/AuthorizationService/target/x86_64-unknown-linux-musl/release/AuthorizationService /usr/local/bin/AuthorizationService
 
 CMD ["AuthorizationService"]

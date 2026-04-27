@@ -13,16 +13,31 @@ use app_state::AppState;
 async fn main() {
     let logger = SimpleLogger::new();
 
-    let server_host = env::var("SERVER_HOST").unwrap_or("localhost".to_string());
-    let server_port = match env::var("SERVER_PORT") {
-        Ok(port) => port.parse::<u16>().unwrap_or_else(|_| {
-            logger.log(
-                "SERVER_PORT from ENV must be a number",
-                LogLevel::CriticalError,
-            );
-            panic!();
-        }),
-        Err(_) => 8080,
+    let server_host = {
+        const TARGET_VAR: &str = "SERVER_HOST";
+        env::var(TARGET_VAR).unwrap_or_else(|_| {
+            const DEFAULT_VALUE: &str = "localhost";
+            logger.log(format!("\"{TARGET_VAR}\" is not defined. Using default value: \"{DEFAULT_VALUE}\"").as_str(), LogLevel::Warning);
+            DEFAULT_VALUE.to_string()
+        })
+    };
+    
+    let server_port = {
+        const TARGET_VAR: &str = "SERVER_PORT";
+        const DEFAULT_VALUE: u16 = 8080u16;
+        match env::var(TARGET_VAR) {
+            Ok(port) => port.parse::<u16>().unwrap_or_else(|_| {
+                logger.log(
+                    format!("\"{TARGET_VAR}\" must be a number. Using default value: \"{DEFAULT_VALUE}\"").as_str(),
+                    LogLevel::Warning,
+                );
+                DEFAULT_VALUE
+            }),
+            Err(_) => {
+                logger.log(format!("\"{TARGET_VAR}\" is not defined. Using default value: \"{DEFAULT_VALUE}\"").as_str(), LogLevel::Warning);
+                DEFAULT_VALUE
+            },
+        }
     };
 
     let state = AppState::new(Arc::new(Mutex::new(logger)));

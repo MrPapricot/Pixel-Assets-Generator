@@ -2,18 +2,18 @@ services:
   psql:
     image: postgres:18
     command: postgres
-    env_file:
-      - common.env
     environment:
       POSTGRES_USER: ${DB_SUPERUSER:?}
       POSTGRES_PASSWORD: ${DB_SUPERUSER_PASSWORD:?}
       POSTGRES_DB: ${DB_NAME:?}
+      DB_USER: ${DB_USER:?}
+      DB_USER_PASSWORD: ${DB_USER_PASSWORD:?}
     ports:
       - '8000:5432'
     volumes:
       - ../Database/init_database.d:/docker-entrypoint-initdb.d
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_SUPERUSER:?}" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -21,11 +21,18 @@ services:
 
   authorization_service:
     build:
-      context: ../AuthorizationService
+      context: ..
+      dockerfile: AuthorizationService/Dockerfile
       target: start
-    env_file:
-      - common.env
-      - auth.env
+    environment:
+      JWT_KEY: ${JWT_KEY:?}
+      AUTH_HOST: ${AUTH_HOST:?}
+      AUTH_PORT: ${AUTH_PORT:?}
+      DB_PORT: ${DB_PORT:?}
+      DB_HOST: ${DB_HOST:?}
+      DB_NAME: ${DB_NAME:?}
+      DB_USER: ${DB_USER:?}
+      DB_USER_PASSWORD: ${DB_USER_PASSWORD:?}
     depends_on:
       psql:
         condition: service_healthy
@@ -38,11 +45,12 @@ services:
 
   backend_server:
     build:
-      context: ../CommandProjectBackend
+      context: ..
+      dockerfile: CommandProjectBackend/Dockerfile
       target: start
-    env_file:
-      - server.env
-      - common.env
+    environment:
+      SERVER_HOST: ${SERVER_HOST:?}
+      SERVER_PORT: ${SERVER_PORT:?}
     ports:
       - '8080:8080'
     depends_on:
