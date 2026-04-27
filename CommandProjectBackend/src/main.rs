@@ -1,13 +1,11 @@
 use axum::routing::get;
 use std::env;
+use std::sync::{Arc, Mutex};
 
 mod app_state;
 mod handlers;
-mod logger;
-mod simple_logger;
 
-use logger::{LogLevel, Logger};
-use simple_logger::SimpleLogger;
+use logger::{LogLevel, Logger, simple_logger::SimpleLogger};
 
 use app_state::AppState;
 
@@ -27,7 +25,7 @@ async fn main() {
         Err(_) => 8080,
     };
 
-    let state = AppState::new(Box::new(logger));
+    let state = AppState::new(Arc::new(Mutex::new(logger)));
 
     let listener = match tokio::net::TcpListener::bind(format!("{server_host}:{server_port}")).await
     {

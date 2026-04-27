@@ -1,5 +1,5 @@
 use crate::app_state::AppState;
-use crate::logger::LogLevel;
+use logger::LogLevel;
 use axum::Json;
 use axum::extract::State;
 use axum::http::StatusCode;

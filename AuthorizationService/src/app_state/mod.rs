@@ -1,7 +1,7 @@
 use crate::database_adapter::custom_db_error::BaseDBError;
 use crate::database_adapter::{DBAdapter, models};
 use crate::jwt_token_manager::{JWTDecodingError, JWTTokenManager};
-use crate::logger::{LogLevel, Logger};
+use logger::{LogLevel, Logger};
 use std::env;
 use std::sync::{Arc, Mutex};
 
@@ -23,7 +23,7 @@ impl AppState {
         let token_manager = JWTTokenManager::init(jwt_key.as_str());
         match token_manager {
             Err(err) => {
-                logger.lock().unwrap().log(
+                logger.lock().expect("poisoned").log(
                     format!("Error initializing token manager. Error is: {:?}", err).as_str(),
                     LogLevel::CriticalError,
                 );

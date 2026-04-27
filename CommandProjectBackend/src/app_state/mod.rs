@@ -1,15 +1,15 @@
-use crate::logger::{LogLevel, Logger};
+use logger::{LogLevel, Logger};
 use std::sync::{Arc, Mutex};
 
 #[derive(Clone)]
 pub(crate) struct AppState {
-    logger: Arc<Mutex<Box<dyn Logger>>>,
+    logger: Arc<Mutex<dyn Logger>>,
 }
 
 impl AppState {
-    pub fn new(logger: Box<dyn Logger>) -> AppState {
+    pub fn new(logger: Arc<Mutex<dyn Logger>>) -> AppState {
         AppState {
-            logger: Arc::new(Mutex::new(logger)),
+            logger: logger.clone(),
         }
     }
 

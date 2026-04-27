@@ -1,6 +1,6 @@
 use crate::app_state::AppState;
 use crate::database_adapter::custom_db_error::BaseDBError;
-use crate::logger::LogLevel;
+use logger::LogLevel;
 use axum::extract::{Json as JsonExtractor, State};
 use axum::http::StatusCode;
 use axum::http::header::HeaderMap;

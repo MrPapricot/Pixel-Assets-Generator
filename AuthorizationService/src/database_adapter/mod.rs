@@ -3,6 +3,7 @@ use sqlx;
 use std::pin::Pin;
 
 pub(crate) mod models {
+    #[allow(dead_code)]
     #[derive(sqlx::FromRow, Debug)]
     pub(crate) struct User {
         uuid: sqlx::types::Uuid,

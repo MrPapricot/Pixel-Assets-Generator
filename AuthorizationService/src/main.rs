@@ -5,12 +5,8 @@ mod app_state;
 mod database_adapter;
 mod handlers;
 mod jwt_token_manager;
-mod logger;
 mod postgres_database_adapter;
-mod simple_logger;
-
-use logger::{LogLevel, Logger};
-use simple_logger::SimpleLogger;
+use logger::{Logger, LogLevel, simple_logger::SimpleLogger};
 
 use crate::postgres_database_adapter::PostgresDBAdapter;
 
