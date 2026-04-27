@@ -1,6 +1,6 @@
 use axum::routing::get;
 use std::env;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, RwLock};
 
 mod app_state;
 mod handlers;
@@ -8,6 +8,7 @@ mod handlers;
 use logger::{LogLevel, Logger, simple_logger::SimpleLogger};
 
 use app_state::AppState;
+use crate::app_state::ServiceData;
 
 #[tokio::main]
 async fn main() {
@@ -40,7 +41,38 @@ async fn main() {
         }
     };
 
-    let state = AppState::new(Arc::new(Mutex::new(logger)));
+    let auth_host = {
+        const TARGET_VAR: &str = "AUTH_HOST";
+        env::var(TARGET_VAR).unwrap_or_else(|_| {
+            const DEFAULT_VALUE: &str = "localhost";
+            logger.log(format!("\"{TARGET_VAR}\" is not defined. Using default value: \"{DEFAULT_VALUE}\"").as_str(), LogLevel::Warning);
+            DEFAULT_VALUE.to_string()
+        })
+    };
+
+    let auth_port = {
+        const TARGET_VAR: &str = "AUTH_PORT";
+        const DEFAULT_VALUE: u16 = 8070u16;
+        match env::var(TARGET_VAR) {
+            Ok(port) => port.parse::<u16>().unwrap_or_else(|_| {
+                logger.log(
+                    format!("\"{TARGET_VAR}\" must be a number. Using default value: \"{DEFAULT_VALUE}\"").as_str(),
+                    LogLevel::Warning,
+                );
+                DEFAULT_VALUE
+            }),
+            Err(_) => {
+                logger.log(format!("\"{TARGET_VAR}\" is not defined. Using default value: \"{DEFAULT_VALUE}\"").as_str(), LogLevel::Warning);
+                DEFAULT_VALUE
+            },
+        }
+    };
+    
+    let services: Vec<ServiceData> = vec![
+        ServiceData::new("Auth Service".to_string(), auth_host, auth_port),
+    ];
+
+    let state = AppState::new(Arc::new(Mutex::new(logger)), Arc::new(RwLock::new(services)));
 
     let listener = match tokio::net::TcpListener::bind(format!("{server_host}:{server_port}")).await
     {
@@ -56,7 +88,7 @@ async fn main() {
     };
 
     let app = axum::Router::new()
-        .route("/health_check", get(handlers::health_check))
+        .route("/health", get(handlers::healthcheck))
         .with_state(state.clone());
 
     state.log(

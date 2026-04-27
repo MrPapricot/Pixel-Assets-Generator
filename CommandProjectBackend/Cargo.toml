@@ -8,4 +8,6 @@ tokio = {version = "1.49.0", features = ["full"]}
 axum = {version = "0.8.8", features = ["tokio"]}
 chrono = {version = "0.4.44"}
 serde_json = {version = "1.0.149"}
+serde = { version = "1.0.228", features = ["derive"] }
 logger = {path = "../logger"}
+reqwest = {version = "0.11.0", features = ["json"]}

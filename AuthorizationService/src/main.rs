@@ -152,7 +152,7 @@ async fn main() {
         .route("/", get(handlers::default_handler))
         .route("/new_user", post(handlers::create_user_handler))
         .route("/get_user", get(handlers::get_user_handler))
-        .route("/healthcheck", get(handlers::healthcheck))
+        .route("/health", get(handlers::healthcheck))
         .with_state(state.clone());
 
     let listener =

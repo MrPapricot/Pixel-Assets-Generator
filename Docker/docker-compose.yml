@@ -8,8 +8,6 @@ services:
       POSTGRES_DB: ${DB_NAME:?}
       DB_USER: ${DB_USER:?}
       DB_USER_PASSWORD: ${DB_USER_PASSWORD:?}
-    ports:
-      - '8000:5432'
     volumes:
       - ../Database/init_database.d:/docker-entrypoint-initdb.d
     healthcheck:
@@ -51,6 +49,8 @@ services:
     environment:
       SERVER_HOST: ${SERVER_HOST:?}
       SERVER_PORT: ${SERVER_PORT:?}
+      AUTH_HOST: ${AUTH_OUTER_HOST:?}
+      AUTH_PORT: ${AUTH_PORT:?}
     ports:
       - '8080:8080'
     depends_on:
