@@ -32,8 +32,11 @@ pub(crate) enum Status {
 
 #[derive(Debug, serde::Serialize)]
 pub(crate) struct ServiceStatus {
+    #[serde(rename="ServiceName")]
     pub(crate) service_name: String,
+    #[serde(rename="ServiceStatus")]
     pub(crate) service_status: Status,
+    #[serde(rename="Message")]
     pub(crate) service_json_output: Option<serde_json::Value>,
 }
 
