@@ -1,1 +1,15 @@
-# Богдан пидор пушит в main. Я его рот ебал
+# Запуск
+
+Требуется установленный docker
+
+``` bash
+cd Docker
+docker compose up
+```
+
+Для полной персборки
+
+``` bash
+cd Docker 
+docker compose up --build
+```
