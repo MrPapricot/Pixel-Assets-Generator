@@ -1,10 +1,10 @@
 use crate::app_state::AppState;
 use crate::database_adapter::custom_db_error::BaseDBError;
-use logger::LogLevel;
 use axum::extract::{Json as JsonExtractor, State};
 use axum::http::StatusCode;
 use axum::http::header::HeaderMap;
 use axum::response::{IntoResponse, Json};
+use logger::LogLevel;
 use serde;
 use serde_json;
 use serde_json::json;
@@ -56,6 +56,15 @@ pub(crate) async fn create_user_handler(
                 _ => unreachable!(),
             }
         }
+    }
+}
+
+pub(crate) async fn healthcheck(State(state): State<AppState>) -> impl IntoResponse {
+    if state.check_database_health().await {
+        (StatusCode::OK, Json(json!({"Status": "Active"})))
+    }
+    else {
+        (StatusCode::SERVICE_UNAVAILABLE, Json(json!({"Error": "Connection to Database is lost"})))
     }
 }
 
@@ -123,9 +132,4 @@ pub(crate) async fn get_user_handler(
             }
         }
     }
-}
-
-
-pub(crate) async fn healthcheck() -> impl IntoResponse{
-    (StatusCode::OK, Json(json!({"Status": "Active"})))
 }

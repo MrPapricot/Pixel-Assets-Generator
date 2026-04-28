@@ -38,4 +38,6 @@ pub(crate) trait DBAdapter: Sync + Send {
         &'a self,
         uuid: sqlx::types::Uuid,
     ) -> Pin<Box<dyn Future<Output = Result<models::User, BaseDBError>> + Send + 'a>>;
+
+    fn is_healthy<'a>(&'a self) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>>;
 }

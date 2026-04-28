@@ -80,4 +80,8 @@ impl AppState {
     ) -> Result<sqlx::types::Uuid, JWTDecodingError> {
         self.token_manager.get_uuid_from_token(token)
     }
+
+    pub(crate) async fn check_database_health(&self) -> bool {
+        self.database_adapter.is_healthy().await
+    }
 }

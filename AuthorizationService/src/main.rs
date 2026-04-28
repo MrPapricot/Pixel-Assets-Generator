@@ -6,7 +6,7 @@ mod database_adapter;
 mod handlers;
 mod jwt_token_manager;
 mod postgres_database_adapter;
-use logger::{Logger, LogLevel, simple_logger::SimpleLogger};
+use logger::{LogLevel, Logger, simple_logger::SimpleLogger};
 
 use crate::postgres_database_adapter::PostgresDBAdapter;
 
@@ -25,7 +25,10 @@ async fn main() {
         env::var(TARGET_VAR).unwrap_or_else(|_| {
             const DEFAULT_VALUE: &str = "localhost";
             logger.log(
-                format!("\"{TARGET_VAR}\" is not defined. Using default value: \"{DEFAULT_VALUE}\"").as_str(),
+                format!(
+                    "\"{TARGET_VAR}\" is not defined. Using default value: \"{DEFAULT_VALUE}\""
+                )
+                .as_str(),
                 LogLevel::Warning,
             );
             DEFAULT_VALUE.to_string()
@@ -58,7 +61,10 @@ async fn main() {
         env::var(TARGET_VAR).unwrap_or_else(|_| {
             const DEFAULT_VALUE: &str = "postgres";
             logger.log(
-                format!("\"{TARGET_VAR}\" is not defined. Using default value: \"{DEFAULT_VALUE}\"").as_str(),
+                format!(
+                    "\"{TARGET_VAR}\" is not defined. Using default value: \"{DEFAULT_VALUE}\""
+                )
+                .as_str(),
                 LogLevel::Warning,
             );
             DEFAULT_VALUE.to_string()
@@ -70,7 +76,10 @@ async fn main() {
         env::var(TARGET_VAR).unwrap_or_else(|_| {
             const DEFAULT_VALUE: &str = "1234";
             logger.log(
-                format!("\"{TARGET_VAR}\" is not defined. Using default value: \"{DEFAULT_VALUE}\"").as_str(),
+                format!(
+                    "\"{TARGET_VAR}\" is not defined. Using default value: \"{DEFAULT_VALUE}\""
+                )
+                .as_str(),
                 LogLevel::Warning,
             );
             DEFAULT_VALUE.to_string()
@@ -82,7 +91,10 @@ async fn main() {
         env::var(TARGET_VAR).unwrap_or_else(|_| {
             const DEFAULT_VALUE: &str = "TestDB";
             logger.log(
-                format!("\"{TARGET_VAR}\" is not defined. Using default value: \"{DEFAULT_VALUE}\"").as_str(),
+                format!(
+                    "\"{TARGET_VAR}\" is not defined. Using default value: \"{DEFAULT_VALUE}\""
+                )
+                .as_str(),
                 LogLevel::Warning,
             );
             DEFAULT_VALUE.to_string()
@@ -98,7 +110,10 @@ async fn main() {
         env::var(TARGET_VAR).unwrap_or_else(|_| {
             const DEFAULT_VALUE: &str = "localhost";
             logger.log(
-                format!("\"{TARGET_VAR}\" is not defined. Using default value: \"{DEFAULT_VALUE}\"").as_str(),
+                format!(
+                    "\"{TARGET_VAR}\" is not defined. Using default value: \"{DEFAULT_VALUE}\""
+                )
+                .as_str(),
                 LogLevel::Warning,
             );
             DEFAULT_VALUE.to_string()
@@ -131,7 +146,7 @@ async fn main() {
         LogLevel::Info,
     );
 
-    let database_adapter = match PostgresDBAdapter::connect(database_url).await {
+    let database_adapter = match PostgresDBAdapter::connect(database_url.as_str()).await {
         Ok(adapter) => adapter,
         Err(error) => {
             logger.log(

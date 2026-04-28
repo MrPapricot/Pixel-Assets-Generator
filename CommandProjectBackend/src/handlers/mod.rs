@@ -4,7 +4,6 @@ use axum::extract::State;
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use logger::LogLevel;
-use reqwest;
 use serde_json::json;
 
 pub(crate) async fn healthcheck(State(state): State<AppState>) -> impl IntoResponse {

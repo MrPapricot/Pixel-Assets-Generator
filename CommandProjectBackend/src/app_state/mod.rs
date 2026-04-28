@@ -28,15 +28,16 @@ pub(crate) enum Status {
     Working,
     Warning,
     NotActive,
+    NotFound,
 }
 
 #[derive(Debug, serde::Serialize)]
 pub(crate) struct ServiceStatus {
-    #[serde(rename="ServiceName")]
+    #[serde(rename="Name")]
     pub(crate) service_name: String,
-    #[serde(rename="ServiceStatus")]
+    #[serde(rename="Status")]
     pub(crate) service_status: Status,
-    #[serde(rename="Message")]
+    #[serde(rename="JSONMessage")]
     pub(crate) service_json_output: Option<serde_json::Value>,
 }
 
@@ -66,7 +67,7 @@ impl AppState {
 
     pub async fn check_services(self) -> Vec<ServiceStatus> {
         // TODO Переписать все на ureq вместо reqwest
-        let services: Vec<ServiceData> = (*self.services.read().expect("Poisoned")).clone();
+        let services: Vec<ServiceData> = (*self.services.read().expect("Poisoned, Should not happen")).clone();
         let mut responses = tokio::task::JoinSet::new();
         let client = reqwest::Client::builder()
             .timeout(std::time::Duration::from_secs(5))
@@ -84,28 +85,27 @@ impl AppState {
                     ))
                     .send()
                     .await;
+                let service_name: String = service.service_name;
+                let status: Status;
+                let output: Option<serde_json::Value>;
                 if let Ok(response) = response {
-                    let status: Status;
-                    status = match response.status() {
-                        reqwest::StatusCode::OK => Status::Working,
-                        _ => Status::Warning,
+                    status = {
+                        use reqwest::StatusCode as SC;
+                        match response.status() {
+                            SC::OK => Status::Working,
+                            SC::NOT_FOUND => Status::NotFound,
+                            _ => Status::Warning,
+                        }
                     };
-                    ServiceStatus {
-                        service_name: service.service_name.clone(),
-                        service_status: status,
-                        service_json_output: Some(
-                            response
-                                .json::<serde_json::Value>()
-                                .await
-                                .expect("Should not fail"),
-                        ),
-                    }
+                    output = response.json::<serde_json::Value>().await.ok();
                 } else {
-                    ServiceStatus {
-                        service_name: service.service_name.clone(),
-                        service_status: Status::NotActive,
-                        service_json_output: None,
-                    }
+                    status = Status::NotActive;
+                    output = None;
+                }
+                ServiceStatus {
+                    service_name,
+                    service_status: status,
+                    service_json_output: output,
                 }
             });
         }

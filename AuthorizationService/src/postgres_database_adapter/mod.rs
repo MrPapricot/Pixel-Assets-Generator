@@ -10,8 +10,12 @@ pub(crate) struct PostgresDBAdapter {
 }
 
 impl PostgresDBAdapter {
-    pub(crate) async fn connect(url: String) -> Result<Self, sqlx::Error> {
-        let pool = PgPoolOptions::new().connect(url.as_str()).await?;
+    pub(crate) async fn connect(url: &str) -> Result<Self, sqlx::Error> {
+        let pool = PgPoolOptions::new()
+            .max_connections(3)
+            .test_before_acquire(true)
+            .connect(url)
+            .await?;
         Ok(PostgresDBAdapter { pool })
     }
 }
@@ -45,8 +49,6 @@ impl DBAdapter for PostgresDBAdapter {
         password_hash: String,
     ) -> Pin<Box<dyn Future<Output = Result<sqlx::types::Uuid, BaseDBError>> + Send + 'a>> {
         Box::pin(async move {
-            //TODO Сделать нормальную генерацию токена
-
             #[derive(sqlx::FromRow)]
             struct ReturnType(sqlx::types::Uuid);
 
@@ -96,5 +98,9 @@ impl DBAdapter for PostgresDBAdapter {
                 Err(err) => Err(BaseDBError::BaseError(err)),
             }
         })
+    }
+
+    fn is_healthy<'a>(&'a self) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+        Box::pin(async move { self.pool.acquire().await.is_ok() })
     }
 }
