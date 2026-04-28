@@ -7,8 +7,8 @@ mod handlers;
 
 use logger::{LogLevel, Logger, simple_logger::SimpleLogger};
 
-use app_state::AppState;
 use crate::app_state::ServiceData;
+use app_state::AppState;
 
 #[tokio::main]
 async fn main() {
@@ -18,11 +18,17 @@ async fn main() {
         const TARGET_VAR: &str = "SERVER_HOST";
         env::var(TARGET_VAR).unwrap_or_else(|_| {
             const DEFAULT_VALUE: &str = "localhost";
-            logger.log(format!("\"{TARGET_VAR}\" is not defined. Using default value: \"{DEFAULT_VALUE}\"").as_str(), LogLevel::Warning);
+            logger.log(
+                format!(
+                    "\"{TARGET_VAR}\" is not defined. Using default value: \"{DEFAULT_VALUE}\""
+                )
+                .as_str(),
+                LogLevel::Warning,
+            );
             DEFAULT_VALUE.to_string()
         })
     };
-    
+
     let server_port = {
         const TARGET_VAR: &str = "SERVER_PORT";
         const DEFAULT_VALUE: u16 = 8080u16;
@@ -45,7 +51,13 @@ async fn main() {
         const TARGET_VAR: &str = "AUTH_HOST";
         env::var(TARGET_VAR).unwrap_or_else(|_| {
             const DEFAULT_VALUE: &str = "localhost";
-            logger.log(format!("\"{TARGET_VAR}\" is not defined. Using default value: \"{DEFAULT_VALUE}\"").as_str(), LogLevel::Warning);
+            logger.log(
+                format!(
+                    "\"{TARGET_VAR}\" is not defined. Using default value: \"{DEFAULT_VALUE}\""
+                )
+                .as_str(),
+                LogLevel::Warning,
+            );
             DEFAULT_VALUE.to_string()
         })
     };
@@ -67,12 +79,17 @@ async fn main() {
             },
         }
     };
-    
-    let services: Vec<ServiceData> = vec![
-        ServiceData::new("Auth Service".to_string(), auth_host, auth_port),
-    ];
 
-    let state = AppState::new(Arc::new(Mutex::new(logger)), Arc::new(RwLock::new(services)));
+    let services: Vec<ServiceData> = vec![ServiceData::new(
+        "Auth Service".to_string(),
+        auth_host,
+        auth_port,
+    )];
+
+    let state = AppState::new(
+        Arc::new(Mutex::new(logger)),
+        Arc::new(RwLock::new(services)),
+    );
 
     let listener = match tokio::net::TcpListener::bind(format!("{server_host}:{server_port}")).await
     {
@@ -98,5 +115,3 @@ async fn main() {
 
     axum::serve(listener, app).await.unwrap();
 }
-
-// TODO Сделать подсос к сервису авторизации

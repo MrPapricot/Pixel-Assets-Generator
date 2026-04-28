@@ -67,5 +67,4 @@ pub mod simple_logger {
             SimpleLogger {}
         }
     }
-
 }

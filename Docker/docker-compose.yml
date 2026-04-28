@@ -35,7 +35,7 @@ services:
       psql:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- -T 3 -t 1 http://$$AUTH_HOST:$$AUTH_PORT/healthcheck | grep -qi 'status.*active'"]
+      test: ["CMD-SHELL", "wget -qO- -T 3 -t 1 http://$$AUTH_HOST:$$AUTH_PORT/health | grep -qi 'status.*active'"]
       interval: 5s
       timeout: 5s
       retries: 5
