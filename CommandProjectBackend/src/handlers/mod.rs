@@ -1,6 +1,6 @@
-use crate::app_state::{AppState, ServiceStatus, Status};
+use crate::app_state::{AppState, ServiceStatus, Status, CreateUserBody};
 use axum::Json;
-use axum::extract::State;
+use axum::extract::{Json as JsonExtractor, State};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use logger::LogLevel;
@@ -28,4 +28,15 @@ pub(crate) async fn healthcheck(State(state): State<AppState>) -> impl IntoRespo
             "Services": statuses,
         })),
     )
+}
+
+#[axum::debug_handler]
+pub(crate) async fn create_user_handler(
+    State(state): State<AppState>,
+    JsonExtractor(CreateUserBody {
+        email,
+        password_hash,
+    }): JsonExtractor<CreateUserBody>,
+) -> impl IntoResponse {
+    state.create_new_user(email, password_hash).await
 }

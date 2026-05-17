@@ -1,6 +1,20 @@
+use axum::http::StatusCode;
 use logger::{LogLevel, Logger};
 use reqwest;
+use std::collections::HashMap;
 use std::sync::{Arc, Mutex, RwLock};
+
+#[derive(Clone, PartialEq, Eq, Hash)]
+pub(crate) enum Services {
+    Auth,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+pub(crate) struct CreateUserBody {
+    pub email: String,
+    pub password_hash: String,
+}
+
 
 #[derive(Clone)]
 pub(crate) struct ServiceData {
@@ -33,24 +47,24 @@ pub(crate) enum Status {
 
 #[derive(Debug, serde::Serialize)]
 pub(crate) struct ServiceStatus {
-    #[serde(rename="Name")]
+    #[serde(rename = "Name")]
     pub(crate) service_name: String,
-    #[serde(rename="Status")]
+    #[serde(rename = "Status")]
     pub(crate) service_status: Status,
-    #[serde(rename="JSONMessage")]
+    #[serde(rename = "JSONMessage")]
     pub(crate) service_json_output: Option<serde_json::Value>,
 }
 
 #[derive(Clone)]
 pub(crate) struct AppState {
     logger: Arc<Mutex<dyn Logger>>,
-    services: Arc<RwLock<Vec<ServiceData>>>,
+    services: Arc<RwLock<HashMap<Services, ServiceData>>>,
 }
 
 impl AppState {
     pub fn new(
         logger: Arc<Mutex<dyn Logger>>,
-        services: Arc<RwLock<Vec<ServiceData>>>,
+        services: Arc<RwLock<HashMap<Services, ServiceData>>>,
     ) -> AppState {
         AppState {
             logger: logger.clone(),
@@ -65,23 +79,22 @@ impl AppState {
             .log(message, log_level);
     }
 
-    pub async fn check_services(self) -> Vec<ServiceStatus> {
-        // TODO Переписать все на ureq вместо reqwest
-        let services: Vec<ServiceData> = (*self.services.read().expect("Poisoned, Should not happen")).clone();
+    pub async fn check_services(&self) -> Vec<ServiceStatus> {
+        let services: HashMap<Services, ServiceData> =
+            (*self.services.read().expect("Poisoned, Should not happen")).clone();
         let mut responses = tokio::task::JoinSet::new();
         let client = reqwest::Client::builder()
             .timeout(std::time::Duration::from_secs(5))
             .build()
             .expect("Should not fail");
-        for service in services {
+        for service in services.values() {
             let client = client.clone();
+            let service = service.clone();
             responses.spawn(async move {
-                // TODO Сделать нормальную обработку ошибок
                 let response = client
                     .get(format!(
                         "http://{}:{}/health",
-                        service.service_host.as_str(),
-                        service.service_port
+                        service.service_host, service.service_port
                     ))
                     .send()
                     .await;
@@ -110,5 +123,48 @@ impl AppState {
             });
         }
         responses.join_all().await
+    }
+
+    pub async fn create_new_user(
+        &self,
+        email: String,
+        password_hash: String,
+    ) -> (StatusCode, axum::Json<serde_json::Value>) {
+        let services: HashMap<Services, ServiceData> =
+            (*self.services.read().expect("Poisoned, Should not happen")).clone();
+        let client: reqwest::Client = reqwest::Client::builder()
+            .timeout(std::time::Duration::from_secs(5))
+            .build()
+            .expect("Should not fail");
+        let auth_service: &ServiceData = services.get(&Services::Auth).expect("Should not fail");
+
+        let response = client
+            .post(format!(
+                "http://{}:{}/new_user",
+                auth_service.service_host, auth_service.service_port
+            ))
+            .json(&CreateUserBody {
+                email,
+                password_hash,
+            })
+            .send()
+            .await;
+        if let Ok(response) = response {
+            (
+                StatusCode::from_u16(response.status().as_u16()).expect("Should not fail"),
+                axum::Json(
+                    response
+                        .json::<serde_json::Value>()
+                        .await
+                        .unwrap_or_default(),
+                ),
+            )
+        } else {
+            self.log("Auth service is not accessible", LogLevel::Error);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                axum::Json(serde_json::Value::default()),
+            )
+        }
     }
 }

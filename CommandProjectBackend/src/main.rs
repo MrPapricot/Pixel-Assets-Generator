@@ -1,4 +1,5 @@
-use axum::routing::get;
+use axum::routing::{get, post};
+use std::collections::HashMap;
 use std::env;
 use std::sync::{Arc, Mutex, RwLock};
 
@@ -7,7 +8,7 @@ mod handlers;
 
 use logger::{LogLevel, Logger, simple_logger::SimpleLogger};
 
-use crate::app_state::ServiceData;
+use crate::app_state::{ServiceData, Services};
 use app_state::AppState;
 
 #[tokio::main]
@@ -80,11 +81,10 @@ async fn main() {
         }
     };
 
-    let services: Vec<ServiceData> = vec![ServiceData::new(
-        "Auth Service".to_string(),
-        auth_host,
-        auth_port,
-    )];
+    let services: HashMap<Services, ServiceData> = HashMap::from([(
+        Services::Auth,
+        ServiceData::new("Auth Service".to_string(), auth_host, auth_port),
+    )]);
 
     let state = AppState::new(
         Arc::new(Mutex::new(logger)),
@@ -106,6 +106,7 @@ async fn main() {
 
     let app = axum::Router::new()
         .route("/health", get(handlers::healthcheck))
+        .route("/create_user", post(handlers::create_user_handler))
         .with_state(state.clone());
 
     state.log(

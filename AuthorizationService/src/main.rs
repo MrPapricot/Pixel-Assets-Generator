@@ -192,6 +192,3 @@ async fn main() {
 
     axum::serve(listener, app).await.unwrap();
 }
-
-// TODO Опционально перейти на Protobuf, но в принципе и так норм
-// TODO Сделать кафку
