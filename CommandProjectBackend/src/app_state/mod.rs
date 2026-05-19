@@ -63,14 +63,14 @@ impl ServiceData {
     }
 }
 
-#[derive(Debug, serde::Serialize)]
+#[derive(Debug, serde::Serialize, utoipa::ToSchema)]
 pub(crate) enum Status {
     Working,
     Warning,
     NotActive,
     NotFound,
 }
-#[derive(Debug, serde::Serialize)]
+#[derive(Debug, serde::Serialize, utoipa::ToSchema)]
 pub(crate) struct ServiceStatus {
     #[serde(rename = "Name")]
     pub(crate) service_name: String,

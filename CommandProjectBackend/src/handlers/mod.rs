@@ -10,13 +10,45 @@ use logger::LogLevel;
 use serde;
 use serde_json::json;
 
+use utoipa;
+
 #[derive(serde::Deserialize)]
 pub(crate) struct UserBody {
     email: String,
     password: String,
 }
 
-pub(crate) async fn healthcheck(State(state): State<AppState>) -> impl IntoResponse {
+#[derive(utoipa::OpenApi)]
+#[openapi(
+    paths(healthcheck),
+    components(
+        schemas(HealthBody)
+    ),
+    tags(
+        (name="TESTING", description="Для тестирования. Не использовать")
+    )
+)]
+pub(crate) struct ApiDoc;
+
+#[derive(utoipa::ToSchema, serde::Serialize)]
+pub(crate) struct HealthBody {
+    #[serde(rename = "Services")]
+    services: Vec<ServiceStatus>,
+
+    #[serde(rename = "Total services available")]
+    total_available: u8,
+    timestamp: String
+}
+
+#[utoipa::path(
+    get,
+    path = "/health",
+    tags = ["TESTING"],
+    responses(
+        (status = 200, description="Возвращает работоспособность всех сервисов", body=HealthBody)
+    )
+)]
+pub(crate) async fn healthcheck(State(state): State<AppState>) -> (StatusCode, Json<HealthBody>) {
     let now = chrono::Utc::now();
     let timestamp = now.to_rfc3339();
 
@@ -32,11 +64,13 @@ pub(crate) async fn healthcheck(State(state): State<AppState>) -> impl IntoRespo
     state.log("Healthcheck requested", LogLevel::Info);
     (
         StatusCode::OK,
-        Json(json!({
-            "timestamp": timestamp,
-            "Total services available": total_available,
-            "Services": statuses,
-        })),
+        Json(
+            HealthBody {
+                timestamp,
+                total_available,
+                services: statuses
+            }
+        ),
     )
 }
 

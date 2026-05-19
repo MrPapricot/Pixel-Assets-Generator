@@ -11,6 +11,9 @@ use logger::{LogLevel, Logger, simple_logger::SimpleLogger};
 use crate::app_state::{ServiceData, Services};
 use app_state::AppState;
 
+use utoipa_swagger_ui;
+use utoipa::OpenApi;
+
 #[tokio::main]
 async fn main() {
     let logger = SimpleLogger::new();
@@ -108,6 +111,7 @@ async fn main() {
         .route("/health", get(handlers::healthcheck))
         .route("/create_user", post(handlers::create_user_handler))
         .route("/auth_user", post(handlers::auth_user_handler))
+        .merge(utoipa_swagger_ui::SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", handlers::ApiDoc::openapi()))
         .with_state(state.clone());
 
     state.log(
