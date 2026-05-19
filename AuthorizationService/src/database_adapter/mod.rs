@@ -19,6 +19,7 @@ pub(crate) mod custom_db_error {
         UniqueViolation,
         BaseError(sqlx::Error),
         RowNotFound,
+        WrongPassword,
     }
 }
 
@@ -31,7 +32,7 @@ pub(crate) trait DBAdapter: Sync + Send {
     fn create_new_user<'a>(
         &'a self,
         email: String,
-        password: String,
+        password_hash: String,
     ) -> Pin<Box<dyn Future<Output = Result<sqlx::types::Uuid, BaseDBError>> + Send + 'a>>;
 
     fn get_user_by_uuid<'a>(
@@ -40,4 +41,9 @@ pub(crate) trait DBAdapter: Sync + Send {
     ) -> Pin<Box<dyn Future<Output = Result<models::User, BaseDBError>> + Send + 'a>>;
 
     fn is_healthy<'a>(&'a self) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>>;
+
+    fn get_user_by_email<'a>(
+        &'a self,
+        email: String,
+    ) -> Pin<Box<dyn Future<Output = Result<(sqlx::types::Uuid, String), BaseDBError>> + Send + 'a>>;
 }

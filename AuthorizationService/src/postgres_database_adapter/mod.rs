@@ -103,4 +103,29 @@ impl DBAdapter for PostgresDBAdapter {
     fn is_healthy<'a>(&'a self) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         Box::pin(async move { self.pool.acquire().await.is_ok() })
     }
+
+    fn get_user_by_email<'a>(
+        &'a self,
+        email: String,
+    ) -> Pin<Box<dyn Future<Output = Result<(sqlx::types::Uuid, String), BaseDBError>> + Send + 'a>>
+    {
+        #[derive(sqlx::FromRow)]
+        struct ReturnType(sqlx::types::Uuid, String);
+
+        Box::pin(async move {
+            match sqlx::query_as::<Postgres, ReturnType>(
+                "SELECT uuid, password_hash FROM users WHERE email = $1",
+            )
+            .bind(email)
+            .fetch_optional(&self.pool)
+            .await
+            {
+                Ok(opt) => match opt {
+                    Some(ReturnType(uuid, real_password_hash)) => Ok((uuid, real_password_hash)),
+                    None => Err(BaseDBError::RowNotFound),
+                },
+                Err(error) => Err(BaseDBError::BaseError(error)),
+            }
+        })
+    }
 }

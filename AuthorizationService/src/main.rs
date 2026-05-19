@@ -168,6 +168,10 @@ async fn main() {
         .route("/new_user", post(handlers::create_user_handler))
         .route("/get_user", get(handlers::get_user_handler))
         .route("/health", get(handlers::healthcheck))
+        .route(
+            "/auth_user",
+            post(handlers::get_user_by_email_and_password_handler),
+        )
         .with_state(state.clone());
 
     let listener =

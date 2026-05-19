@@ -1,4 +1,6 @@
-use crate::app_state::AppState;
+use std::hint::unreachable_unchecked;
+
+use crate::app_state::{AppState, Error};
 use crate::database_adapter::custom_db_error::BaseDBError;
 use axum::extract::{Json as JsonExtractor, State};
 use axum::http::StatusCode;
@@ -10,9 +12,9 @@ use serde_json;
 use serde_json::json;
 
 #[derive(serde::Deserialize)]
-pub(crate) struct CreateUserBody {
+pub(crate) struct UserBody {
     email: String,
-    password_hash: String,
+    password: String,
 }
 
 // Хендлер чисто по приколу сделан (только для тестов)
@@ -26,18 +28,14 @@ pub(crate) async fn default_handler(State(state): State<AppState>) -> impl IntoR
 // Иначе возвращает токен
 pub(crate) async fn create_user_handler(
     State(state): State<AppState>,
-    JsonExtractor(CreateUserBody {
-        email,
-        password_hash,
-    }): JsonExtractor<CreateUserBody>,
+    JsonExtractor(UserBody { email, password }): JsonExtractor<UserBody>,
 ) -> impl IntoResponse {
-    match state.create_new_user(email, password_hash).await {
+    match state.create_new_user(email, password).await {
         Ok(uuid) => {
             let token = state.get_jwt_token(uuid);
             (
                 StatusCode::OK,
                 Json(json!({
-                    "Status": "New user created",
                     "token": token,
                 })),
             )
@@ -45,14 +43,21 @@ pub(crate) async fn create_user_handler(
         Err(base_db_err) => {
             use BaseDBError as BDE;
             match base_db_err {
-                BDE::UniqueViolation => (
+                Error::DBError(BDE::UniqueViolation) => (
                     StatusCode::CONFLICT,
                     Json(json!({"Error": "This email is already used"})),
                 ),
-                BDE::BaseError(_) => (
+                Error::DBError(BDE::BaseError(_)) => (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     Json(json!({"Error": "Internal Error"})),
                 ),
+                Error::HashingError => {
+                    state.log("Hashing error happened", LogLevel::Error);
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(json!({"Error": "Internal Error"})),
+                    )
+                }
                 _ => unreachable!(),
             }
         }
@@ -62,9 +67,11 @@ pub(crate) async fn create_user_handler(
 pub(crate) async fn healthcheck(State(state): State<AppState>) -> impl IntoResponse {
     if state.check_database_health().await {
         (StatusCode::OK, Json(json!({"Status": "Active"})))
-    }
-    else {
-        (StatusCode::SERVICE_UNAVAILABLE, Json(json!({"Error": "Connection to Database is lost"})))
+    } else {
+        (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(json!({"Error": "Connection to Database is lost"})),
+        )
     }
 }
 
@@ -113,7 +120,7 @@ pub(crate) async fn get_user_handler(
                         Err(BaseDBError::BaseError(err)) => {
                             state.log(
                                 format!("Error getting user from DB. Error is: {}", err).as_str(),
-                                LogLevel::Warning,
+                                LogLevel::Error,
                             );
                             (
                                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -129,6 +136,38 @@ pub(crate) async fn get_user_handler(
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+pub(crate) async fn get_user_by_email_and_password_handler(
+    State(state): State<AppState>,
+    JsonExtractor(UserBody { email, password }): JsonExtractor<UserBody>,
+) -> impl IntoResponse {
+    match state.get_user_uuid(email, password).await {
+        Ok(uuid) => (
+            StatusCode::OK,
+            Json(json!({"token": state.get_jwt_token(uuid)})),
+        ),
+        Err(error) => {
+            use BaseDBError as BDE;
+            match error {
+                BDE::BaseError(err) => {
+                    state.log(
+                        format!("Error getting user from DB. Error is: {}", err).as_str(),
+                        LogLevel::Error,
+                    );
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(json!({"Error": "Internal Error"})),
+                    )
+                }
+                BDE::RowNotFound | BDE::WrongPassword => (
+                    StatusCode::NO_CONTENT,
+                    Json(json!({"Error": "No user with such email and password"})),
+                ),
+                BDE::UniqueViolation => unsafe { unreachable_unchecked() },
             }
         }
     }

@@ -1,15 +1,24 @@
 use crate::database_adapter::custom_db_error::BaseDBError;
 use crate::database_adapter::{DBAdapter, models};
 use crate::jwt_token_manager::{JWTDecodingError, JWTTokenManager};
+use argon2;
+use argon2::{PasswordHasher, PasswordVerifier};
 use logger::{LogLevel, Logger};
 use std::env;
 use std::sync::{Arc, Mutex};
+
+pub(crate) enum Error {
+    DBError(BaseDBError),
+    HashingError,
+}
 
 #[derive(Clone)]
 pub(crate) struct AppState {
     logger: Arc<Mutex<dyn Logger>>,
     database_adapter: Arc<dyn DBAdapter>,
     token_manager: Arc<JWTTokenManager>,
+    argon_salt: argon2::password_hash::SaltString,
+    argon: argon2::Argon2<'static>,
 }
 
 impl AppState {
@@ -33,6 +42,10 @@ impl AppState {
                 logger: logger.clone(),
                 database_adapter: database_adapter.clone(),
                 token_manager: Arc::new(token_manager),
+                argon_salt: argon2::password_hash::SaltString::generate(
+                    &mut argon2::password_hash::rand_core::OsRng,
+                ),
+                argon: argon2::Argon2::default(),
             },
         }
     }
@@ -52,15 +65,34 @@ impl AppState {
         Ok(unsafe { self.database_adapter.get_all_user_limited(limit) }.await?)
     }
 
+    fn compare_passwords(&self, password: String, password_hash: String) -> bool {
+        let hash = argon2::password_hash::PasswordHash::new(password_hash.as_str())
+            .expect("Should not happen");
+        match self.argon.verify_password(password.as_bytes(), &hash) {
+            Ok(()) => true,
+            Err(_) => false,
+        }
+    }
+
+    pub fn get_password_hash(&self, password: String) -> Option<String> {
+        self.argon
+            .hash_password(password.as_bytes(), &self.argon_salt)
+            .and_then(|hash| Ok(hash.to_string()))
+            .ok()
+    }
+
     pub(crate) async fn create_new_user(
         &self,
         email: String,
-        password_hash: String,
-    ) -> Result<sqlx::types::Uuid, BaseDBError> {
-        Ok(self
-            .database_adapter
-            .create_new_user(email, password_hash)
-            .await?)
+        password: String,
+    ) -> Result<sqlx::types::Uuid, Error> {
+        match self.get_password_hash(password) {
+            Some(hash) => match self.database_adapter.create_new_user(email, hash).await {
+                Ok(uuid) => Ok(uuid),
+                Err(db_err) => Err(Error::DBError(db_err)),
+            },
+            None => Err(Error::HashingError),
+        }
     }
 
     pub(crate) async fn get_user_by_uuid(
@@ -83,5 +115,22 @@ impl AppState {
 
     pub(crate) async fn check_database_health(&self) -> bool {
         self.database_adapter.is_healthy().await
+    }
+
+    pub(crate) async fn get_user_uuid(
+        &self,
+        email: String,
+        password_hash: String,
+    ) -> Result<sqlx::types::Uuid, BaseDBError> {
+        match self.database_adapter.get_user_by_email(email).await {
+            Ok((uuid, real_password_hash)) => {
+                if self.compare_passwords(password_hash, real_password_hash) {
+                    Ok(uuid)
+                } else {
+                    Err(BaseDBError::WrongPassword)
+                }
+            }
+            Err(error) => Err(error),
+        }
     }
 }

@@ -107,6 +107,7 @@ async fn main() {
     let app = axum::Router::new()
         .route("/health", get(handlers::healthcheck))
         .route("/create_user", post(handlers::create_user_handler))
+        .route("/auth_user", post(handlers::auth_user_handler))
         .with_state(state.clone());
 
     state.log(
