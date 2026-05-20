@@ -70,7 +70,15 @@ pub(crate) enum Status {
     NotActive,
     NotFound,
 }
+
 #[derive(Debug, serde::Serialize, utoipa::ToSchema)]
+#[schema(example = json!({
+    "Name": "Auth Service",
+    "Status": "Warning",
+    "JSONMessage": {
+        "Warning": "Database responds slowly"
+    }
+}))]
 pub(crate) struct ServiceStatus {
     #[serde(rename = "Name")]
     pub(crate) service_name: String,

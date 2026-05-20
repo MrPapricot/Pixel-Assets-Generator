@@ -5,6 +5,7 @@ use std::sync::{Arc, Mutex, RwLock};
 
 mod app_state;
 mod handlers;
+mod generate_openapi;
 
 use logger::{LogLevel, Logger, simple_logger::SimpleLogger};
 

@@ -34,7 +34,9 @@ pub(crate) struct HealthBody {
     services: Vec<ServiceStatus>,
 
     #[serde(rename = "Total services available")]
+    #[schema(example = 1)]
     total_available: u8,
+    #[schema(example = "2026-05-20T12:24:25.488746300+00:00")]
     timestamp: String,
 }
 

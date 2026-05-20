@@ -1,0 +1,45 @@
+name: Deploy OpenAPI Docs
+
+on:
+  push:
+    branches: [MainBackend]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Generate OpenAPI JSON
+        run: cargo run --bin generate-openapi --release
+
+      - name: Prepare site directory
+        run: |
+          mkdir -p site
+          mv openapi.json site/
+          cp index.html site/
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
