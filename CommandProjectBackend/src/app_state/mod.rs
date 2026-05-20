@@ -265,10 +265,7 @@ impl AppState {
                         "http://{}:{}/{endpoint}",
                         auth_service.service_host, auth_service.service_port
                     ))
-                    .json(&AuthUserBody {
-                        email,
-                        password,
-                    })
+                    .json(&AuthUserBody { email, password })
                     .send()
                     .await;
                 if let Ok(response) = response {

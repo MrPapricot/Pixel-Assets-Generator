@@ -26,7 +26,7 @@ pub(crate) struct UserBody {
         (name="API", description="Для обычного использования"),
     )
 )]
-pub(crate) struct ApiDoc;
+pub struct ApiDoc;
 
 #[derive(utoipa::ToSchema, serde::Serialize)]
 pub(crate) struct HealthBody {

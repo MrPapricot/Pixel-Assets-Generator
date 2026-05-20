@@ -1,0 +1,254 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "CommandProjectBackend",
+    "description": "",
+    "license": {
+      "name": ""
+    },
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/auth_user": {
+      "post": {
+        "tags": [
+          "API"
+        ],
+        "description": "Ищет пользователя по переданной почте и паролю",
+        "operationId": "auth_user_handler",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Возвращает токен",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserSuccess"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Пользователя с таким email и паролем нет",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервиса",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Внешнии сервисы не работают",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/create_user": {
+      "post": {
+        "tags": [
+          "API"
+        ],
+        "description": "Создает пользователя с переданной почтой и паролем",
+        "operationId": "create_user_handler",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Возвращает токен",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserSuccess"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Email уже используется",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервиса",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Внешнии сервисы не работают",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "TESTING"
+        ],
+        "description": "Проверяет работоспособность всех сервисов, и возвращает отчет",
+        "operationId": "healthcheck",
+        "responses": {
+          "200": {
+            "description": "Возвращает работоспособность всех сервисов",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "HealthBody": {
+        "type": "object",
+        "required": [
+          "Services",
+          "Total services available",
+          "timestamp"
+        ],
+        "properties": {
+          "Services": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ServiceStatus"
+            }
+          },
+          "Total services available": {
+            "type": "integer",
+            "format": "int32",
+            "example": 1,
+            "minimum": 0
+          },
+          "timestamp": {
+            "type": "string",
+            "example": "2026-05-20T12:24:25.488746300+00:00"
+          }
+        }
+      },
+      "ServiceStatus": {
+        "type": "object",
+        "required": [
+          "Name",
+          "Status"
+        ],
+        "properties": {
+          "JSONMessage": {},
+          "Name": {
+            "type": "string"
+          },
+          "Status": {
+            "$ref": "#/components/schemas/Status"
+          }
+        },
+        "example": {
+          "JSONMessage": {
+            "Warning": "Database responds slowly"
+          },
+          "Name": "Auth Service",
+          "Status": "Warning"
+        }
+      },
+      "Status": {
+        "type": "string",
+        "enum": [
+          "Working",
+          "Warning",
+          "NotActive",
+          "NotFound"
+        ]
+      },
+      "UserBody": {
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        }
+      },
+      "UserSuccess": {
+        "type": "object",
+        "required": [
+          "token"
+        ],
+        "properties": {
+          "token": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "TESTING",
+      "description": "Для тестирования. Не использовать"
+    },
+    {
+      "name": "API",
+      "description": "Для обычного использования"
+    }
+  ]
+}
