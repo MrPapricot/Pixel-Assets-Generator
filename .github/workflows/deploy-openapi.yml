@@ -24,12 +24,13 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Generate OpenAPI JSON
+        working-directory: CommandProjectBackend
         run: cargo run --bin generate-openapi --release
 
       - name: Prepare site directory
         run: |
           mkdir -p site
-          mv openapi.json site/
+          mv CommandProjectBackend/openapi.json site/
           cp index.html site/
 
       - name: Setup Pages
