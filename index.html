@@ -1,22 +1,25 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>API Documentation</title>
-    <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist/swagger-ui.css" />
-    <style>body { margin: 20px; }</style>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📖</text></svg>">
+    <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css" />
+    <style>body { margin: 0; background: #fafafa; }</style>
 </head>
 <body>
 <div id="swagger-ui"></div>
-<script src="https://unpkg.com/swagger-ui-dist/swagger-ui-bundle.js"></script>
+
+<script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
 <script>
     window.onload = () => {
-        SwaggerUIBundle({
-            url: './openapi.json',
-            dom_id: '#swagger-ui',
-            presets: [SwaggerUIBundle.presets.apis, SwaggerUIBundle.SwaggerUIStandalonePreset],
-            layout: "StandaloneLayout"
+        window.ui = SwaggerUIBundle({
+            url: "openapi.json",      // относительный путь работает на GitHub Pages
+            dom_id: "#swagger-ui",
+            deepLinking: true,        // позволяет шарить ссылки на конкретные эндпоинты
+            // ✅ presets и layout убраны: v5 использует Standalone по умолчанию
+            // Это убирает ошибку "Could not find component: StandaloneLayout"
         });
     };
 </script>
