@@ -14,7 +14,9 @@ use utoipa;
 
 #[derive(serde::Deserialize, utoipa::ToSchema)]
 pub(crate) struct UserBody {
+    #[schema(example = "mail@mail.com")]
     email: String,
+    #[schema(example = "12345")]
     password: String,
 }
 
@@ -75,6 +77,7 @@ pub(crate) async fn healthcheck(State(state): State<AppState>) -> (StatusCode, J
 
 #[derive(utoipa::ToSchema, serde::Serialize)]
 struct UserSuccess {
+    #[schema(example = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNzA4MzQ1MTIzLCJleHAiOjE3MDgzNTUxMjN9.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c")]
     token: String,
 }
 
@@ -86,9 +89,9 @@ struct UserSuccess {
     description = "Создает пользователя с переданной почтой и паролем",
     responses(
         (status = 200, description = "Возвращает токен", body = UserSuccess),
-        (status = 409, description = "Email уже используется", body = String),
-        (status = 500, description = "Внутренняя ошибка сервиса", body = String),
-        (status = 502, description = "Внешнии сервисы не работают", body = String),
+        (status = 409, description = "Email уже используется", body = String, example = "Email is already used"),
+        (status = 500, description = "Внутренняя ошибка сервиса", body = String, example = "Some services are not working properly. Try again later"),
+        (status = 502, description = "Внешнии сервисы не работают", body = String, example = "Something went wrong. Try again later"),
     )
 )]
 #[axum::debug_handler]
@@ -104,9 +107,7 @@ pub(crate) async fn create_user_handler(
             | Errors::NotFound
             | Errors::AuthServiceUnaccessible => (
                 StatusCode::BAD_GATEWAY,
-                Json(json!(
-                    "Some services are not working properly. Try again later"
-                )),
+                Json(json!("Some services are not working properly. Try again later")),
             ),
             Errors::SelfInternalError(_) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -125,9 +126,9 @@ pub(crate) async fn create_user_handler(
     description = "Ищет пользователя по переданной почте и паролю",
     responses(
         (status = 200, description = "Возвращает токен", body = UserSuccess),
-        (status = 401, description = "Пользователя с таким email и паролем нет", body = String),
-        (status = 500, description = "Внутренняя ошибка сервиса", body = String),
-        (status = 502, description = "Внешнии сервисы не работают", body = String),
+        (status = 401, description = "Пользователя с таким email и паролем нет", body = String, example = "No user with such email or password"),
+        (status = 500, description = "Внутренняя ошибка сервиса", body = String, example = "Something went wrong. Try again later"),
+        (status = 502, description = "Внешнии сервисы не работают", body = String, example = "Some services are not working properly. Try again later"),
     )
 )]
 pub(crate) async fn auth_user_handler(
@@ -145,7 +146,7 @@ pub(crate) async fn auth_user_handler(
             | Errors::NotFound
             | Errors::AuthServiceUnaccessible => (
                 StatusCode::BAD_GATEWAY,
-                Json(json!("Auth service is not working properly")),
+                Json(json!("Some services are not working properly. Try again later")),
             ),
             Errors::SelfInternalError(_) => (
                 StatusCode::INTERNAL_SERVER_ERROR,

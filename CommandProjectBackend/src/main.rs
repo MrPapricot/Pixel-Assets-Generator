@@ -16,8 +16,7 @@ use utoipa_swagger_ui;
 
 #[tokio::main]
 async fn main() {
-    let mut args = env::args();
-    match args.skip(1).next() {
+    match env::args().skip(1).next() {
         Some(arg) if arg == "GEN_API" => {
             let api = handlers::ApiDoc::openapi();
             let json = serde_json::to_string_pretty(&api).expect("❌ Failed to serialize OpenAPI");
