@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package auth;
+
+service Auth {
+  rpc CreateNewUser (UserBody) returns (CreateUserResult);
+  rpc AuthUser (UserBody) returns (AuthUserResult);
+}
+
+message UserBody {
+  string email = 1;
+  string password = 2;
+}
+
+message CreateUserResult {
+  oneof result {
+    string token = 1;
+    CreateUserError error = 2;
+  }
+}
+
+enum CreateUserError {
+  EMAIL_USED = 0;
+}
+
+message AuthUserResult {
+  oneof result {
+    string token = 1;
+    AuthUserError error = 2;
+  }
+}
+
+enum AuthUserError {
+  USER_NOT_FOUND = 0;
+}
+
+enum ServerError {
+  INTERNAL_SERVER_ERROR = 0;
+}
+
+message TokenResult {
+  string token = 1;
+}
