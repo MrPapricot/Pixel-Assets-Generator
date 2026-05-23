@@ -14,3 +14,4 @@ auth_rpc = {path = "../auth_rpc"}
 reqwest = {version = "0.11.0", features = ["json", "rustls-tls"], default-features = false}
 utoipa-swagger-ui = {version = "9.0.2", features = ["axum"]}
 utoipa = {version="5.5.0", features = ["axum_extras"]}
+tonic = {version = "0.14.6"}

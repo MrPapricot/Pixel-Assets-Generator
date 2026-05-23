@@ -5,10 +5,12 @@ use std::{env, fs};
 
 mod app_state;
 mod handlers;
+mod rpc_implementation;
 
 use logger::{LogLevel, Logger, simple_logger::SimpleLogger};
 
 use crate::app_state::{ServiceData, Services};
+use crate::rpc_implementation::AuthAdapter;
 use app_state::AppState;
 
 use utoipa::OpenApi;
@@ -99,12 +101,15 @@ async fn main() {
 
             let services: HashMap<Services, ServiceData> = HashMap::from([(
                 Services::Auth,
-                ServiceData::new("Auth Service".to_string(), auth_host, auth_port),
+                ServiceData::new("Auth Service".to_string(), auth_host.clone(), auth_port.clone()),
             )]);
+
+            let auth_adapter = AuthAdapter::new(format!("http://{auth_host}:{auth_port}").parse().expect("Should be valid URI")).await;
 
             let state = AppState::new(
                 Arc::new(Mutex::new(logger)),
                 Arc::new(RwLock::new(services)),
+                Arc::new(Mutex::new(auth_adapter)),
             );
 
             let listener = match tokio::net::TcpListener::bind(format!(

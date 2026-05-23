@@ -1,3 +1,4 @@
+use auth_rpc::auth::HealthStatus;
 use axum::Json;
 use logger::{LogLevel, Logger};
 use reqwest;
@@ -5,6 +6,7 @@ use reqwest::StatusCode;
 use serde_json::json;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, RwLock};
+use crate::rpc_implementation::AuthAdapter;
 
 use crate::app_state::results::{AuthUserResult, CreateUserResult, Errors};
 
@@ -67,7 +69,7 @@ impl ServiceData {
 pub(crate) enum Status {
     Working,
     Warning,
-    NotActive,
+    Error,
     NotFound,
 }
 
@@ -84,24 +86,27 @@ pub(crate) struct ServiceStatus {
     pub(crate) service_name: String,
     #[serde(rename = "Status")]
     pub(crate) service_status: Status,
-    #[serde(rename = "JSONMessage")]
-    pub(crate) service_json_output: Option<serde_json::Value>,
+    #[serde(rename = "Message")]
+    pub(crate) message: Option<String>,
 }
 
 #[derive(Clone)]
 pub(crate) struct AppState {
     logger: Arc<Mutex<dyn Logger>>,
     services: Arc<RwLock<HashMap<Services, ServiceData>>>,
+    auth_adapter: Arc<Mutex<AuthAdapter>>,
 }
 
 impl AppState {
     pub fn new(
         logger: Arc<Mutex<dyn Logger>>,
         services: Arc<RwLock<HashMap<Services, ServiceData>>>,
+        auth_adapter: Arc<Mutex<AuthAdapter>>,
     ) -> AppState {
         AppState {
             logger: logger.clone(),
             services: services.clone(),
+            auth_adapter: auth_adapter.clone(),
         }
     }
 
@@ -112,49 +117,35 @@ impl AppState {
             .log(message, log_level);
     }
 
-    pub async fn check_services(&self) -> Vec<ServiceStatus> {
-        let services: HashMap<Services, ServiceData> =
-            (*self.services.read().expect("Poisoned, Should not happen")).clone();
+    pub async fn check_services(&mut self) -> Vec<ServiceStatus> {
         let mut responses = tokio::task::JoinSet::new();
-        let client = reqwest::Client::builder()
-            .timeout(std::time::Duration::from_secs(5))
-            .build()
-            .expect("Should not fail");
-        for service in services.values() {
-            let client = client.clone();
-            let service = service.clone();
-            responses.spawn(async move {
-                let response = client
-                    .get(format!(
-                        "http://{}:{}/health",
-                        service.service_host, service.service_port
-                    ))
-                    .send()
-                    .await;
-                let service_name: String = service.service_name;
-                let status: Status;
-                let output: Option<serde_json::Value>;
-                if let Ok(response) = response {
-                    status = {
-                        use reqwest::StatusCode as SC;
-                        match response.status() {
-                            SC::OK => Status::Working,
-                            SC::NOT_FOUND => Status::NotFound,
-                            _ => Status::Warning,
-                        }
-                    };
-                    output = response.json::<serde_json::Value>().await.ok();
-                } else {
-                    status = Status::NotActive;
-                    output = None;
+        let mut auth_adapter = self.auth_adapter.lock().expect("Poisoned. Should not happed").clone();
+        responses.spawn(async move {
+            match auth_adapter.health().await {
+                Ok(response) => {
+                    let health_result = response.into_inner();
+                    let status;
+                    match health_result.status {
+                        res if res == HealthStatus::Ok as i32 => status = Status::Working,
+                        res if res == HealthStatus::Warning as i32 => status = Status::Warning,
+                        res if res == HealthStatus::Error as i32 => status = Status::Error,
+                        _ => unreachable!()
+                    }
+                    ServiceStatus {
+                        service_name: "Auth Service".to_string(),
+                        service_status: status,
+                        message: health_result.message,
+                    }
                 }
-                ServiceStatus {
-                    service_name,
-                    service_status: status,
-                    service_json_output: output,
+                Err(_) => {
+                    ServiceStatus {
+                        service_name: "Auth Service".to_string(),
+                        service_status: Status::NotFound,
+                        message: None,
+                    }
                 }
-            });
-        }
+            }
+        });
         responses.join_all().await
     }
 

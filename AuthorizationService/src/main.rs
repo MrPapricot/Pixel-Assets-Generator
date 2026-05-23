@@ -4,7 +4,6 @@ use std::sync::{Arc, Mutex};
 
 mod app_state;
 mod database_adapter;
-mod handlers;
 mod jwt_token_manager;
 mod postgres_database_adapter;
 use auth_rpc::auth::auth_server::AuthServer;
@@ -176,37 +175,4 @@ async fn main() {
     let addr = SocketAddr::new(IpAddr::V4(service_host.parse::<Ipv4Addr>().unwrap()), service_port);
 
     Server::builder().add_service(auth_server).serve(addr).await.unwrap();
-//
-//    let app = axum::routing::Router::new()
-//        .route("/", get(handlers::default_handler))
-//        .route("/new_user", post(handlers::create_user_handler))
-//        .route("/get_user", get(handlers::get_user_handler))
-//        .route("/health", get(handlers::healthcheck))
-//        .route(
-//            "/auth_user",
-//            post(handlers::get_user_by_email_and_password_handler),
-//        )
-//        .with_state(state.clone());
-//
-//    let listener =
-//        match tokio::net::TcpListener::bind(format!("{service_host}:{service_port}")).await {
-//            Ok(listener) => listener,
-//            Err(error) => {
-//                state.log(
-//                    format!(
-//                        "Unable to listen to {service_host}:{service_port}; Error occurred: {error}"
-//                    )
-//                    .as_str(),
-//                    LogLevel::CriticalError,
-//                );
-//                panic!()
-//            }
-//        };
-//
-//    state.log(
-//        format!("Start serving at http://{service_host}:{service_port}").as_str(),
-//        LogLevel::Info,
-//    );
-//
-//    axum::serve(listener, app).await.unwrap();
 }

@@ -63,7 +63,6 @@ pub(crate) async fn healthcheck(State(state): State<AppState>) -> (StatusCode, J
             _ => {}
         }
     }
-
     state.log("Healthcheck requested", LogLevel::Info);
     (
         StatusCode::OK,
