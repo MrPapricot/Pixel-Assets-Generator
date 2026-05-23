@@ -103,7 +103,6 @@ pub(crate) async fn create_user_handler(
         CUR::EmailUsed => (StatusCode::CONFLICT, Json(json!("Email is already used"))),
         CUR::BaseError(error) => match error {
             Errors::AuthServiceInternalError
-            | Errors::NotFound
             | Errors::AuthServiceUnaccessible => (
                 StatusCode::BAD_GATEWAY,
                 Json(json!("Some services are not working properly. Try again later")),
@@ -113,7 +112,7 @@ pub(crate) async fn create_user_handler(
                 Json(json!("Something went wrong. Try again later")),
             ),
         },
-        CUR::UserCreated { token } => (StatusCode::OK, Json(json!({"Token": token}))),
+        CUR::UserCreated { token } => (StatusCode::OK, Json(json!({"token": token}))),
     }
 }
 
@@ -142,7 +141,6 @@ pub(crate) async fn auth_user_handler(
         ),
         AUR::BaseError(error) => match error {
             Errors::AuthServiceInternalError
-            | Errors::NotFound
             | Errors::AuthServiceUnaccessible => (
                 StatusCode::BAD_GATEWAY,
                 Json(json!("Some services are not working properly. Try again later")),
@@ -152,6 +150,6 @@ pub(crate) async fn auth_user_handler(
                 Json(json!("Something went wrong. Try again later")),
             ),
         },
-        AUR::UserAuthenticated { token } => (StatusCode::OK, Json(json!({"Token": token}))),
+        AUR::UserAuthenticated { token } => (StatusCode::OK, Json(json!({"token": token}))),
     }
 }

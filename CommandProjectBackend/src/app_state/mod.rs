@@ -1,14 +1,11 @@
-use auth_rpc::auth::HealthStatus;
+use auth_rpc::auth::{AuthUserError, CreateUserError, HealthStatus, ServerError, auth_user_result, create_user_result};
 use axum::Json;
 use logger::{LogLevel, Logger};
-use reqwest;
-use reqwest::StatusCode;
-use serde_json::json;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, RwLock};
 use crate::rpc_implementation::AuthAdapter;
 
-use crate::app_state::results::{AuthUserResult, CreateUserResult, Errors};
+use crate::app_state::results::{AuthUserResult, Errors};
 
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub(crate) enum Services {
@@ -22,7 +19,6 @@ pub(crate) mod results {
         AuthServiceInternalError,
         SelfInternalError(Json<serde_json::Value>),
         AuthServiceUnaccessible,
-        NotFound,
     }
 
     pub(crate) enum CreateUserResult {
@@ -149,160 +145,59 @@ impl AppState {
         responses.join_all().await
     }
 
-    pub async fn create_new_user(&self, email: String, password: String) -> CreateUserResult {
-        match reqwest::Client::builder()
-            .timeout(std::time::Duration::from_secs(5))
-            .build()
-        {
-            Err(error) => {
-                self.log(
-                    format!("Error creating reqwest client: {}", error).as_str(),
-                    LogLevel::Error,
-                );
-                CreateUserResult::BaseError(Errors::SelfInternalError(Json(
-                    json!({"Error": "Something went wrong. Try again later"}),
-                )))
-            }
-            Ok(client) => {
-                let auth_service: ServiceData =
-                    (*self.services.read().expect("Poisoned, Should not happen"))
-                        .get(&Services::Auth)
-                        .expect("Should not fail")
-                        .clone();
-
-                let endpoint = "new_user";
-
-                let response = client
-                    .post(format!(
-                        "http://{}:{}/{endpoint}",
-                        auth_service.service_host, auth_service.service_port
-                    ))
-                    .json(&AuthUserBody { email, password })
-                    .send()
-                    .await;
-                if let Ok(response) = response {
-                    match response.status() {
-                        StatusCode::OK => {
-                            #[derive(serde::Serialize, serde::Deserialize)]
-                            struct UserCreatedBody {
-                                token: String,
+    pub async fn create_new_user(&self, email: String, password: String) -> results::CreateUserResult {
+        let mut auth_adapter = self.auth_adapter.lock().expect("Poisoned. Should not happed").clone();
+        match auth_adapter.create_user(email, password).await {
+            Ok(response) => {
+                let user_result = response.into_inner();
+                match user_result.result {
+                    Some(result) => {
+                        use create_user_result::Result as res;
+                        match result {
+                            res::Token(token) => results::CreateUserResult::UserCreated { token },
+                            res::Error(error) => match error {
+                                err if err == CreateUserError::EmailUsed as i32 => results::CreateUserResult::EmailUsed,
+                                _ => unreachable!()
                             }
-                            match response.json::<UserCreatedBody>().await {
-                                Ok(body) => CreateUserResult::UserCreated { token: body.token },
-                                Err(error) => {
-                                    self.log(format!("Auth service returned unexpectable body on new_user request. Error is \"{:?}\"", error).as_str(), LogLevel::Error);
-                                    CreateUserResult::BaseError(Errors::SelfInternalError(Json(
-                                        json!({"Error": "Error decoding respose from Auth:create_new_user"}),
-                                    )))
-                                }
+                            res::ServerError(server_error) => match server_error {
+                                err if (err == ServerError::DbError as i32) | (err == ServerError::InternalServerError as i32) => results::CreateUserResult::BaseError(Errors::AuthServiceInternalError),
+                                _ => unreachable!()
                             }
-                        }
-                        StatusCode::INTERNAL_SERVER_ERROR => {
-                            CreateUserResult::BaseError(Errors::AuthServiceInternalError)
-                        }
-                        StatusCode::CONFLICT => CreateUserResult::EmailUsed,
-                        StatusCode::NOT_FOUND => {
-                            self.log(
-                                format!("This endpoint is not found in auth service: {endpoint}")
-                                    .as_str(),
-                                LogLevel::CriticalError,
-                            );
-                            CreateUserResult::BaseError(Errors::NotFound)
-                        }
-                        code => {
-                            self.log(
-                                format!("Auth Service returned unexpectable status code: {}", code)
-                                    .as_str(),
-                                LogLevel::Error,
-                            );
-                            CreateUserResult::BaseError(Errors::SelfInternalError(Json(
-                                json!({"Error": "Something went wrong. Try again later"}),
-                            )))
                         }
                     }
-                } else {
-                    self.log("Auth service is not accessible", LogLevel::Error);
-                    CreateUserResult::BaseError(Errors::AuthServiceUnaccessible)
+                    None => unreachable!()
                 }
             }
+            Err(_) => results::CreateUserResult::BaseError(Errors::AuthServiceUnaccessible)
         }
     }
 
     pub async fn get_user_token(&self, email: String, password: String) -> AuthUserResult {
-        match reqwest::Client::builder()
-            .timeout(std::time::Duration::from_secs(5))
-            .build()
-        {
-            Err(error) => {
-                self.log(
-                    format!("Error creating reqwest client: {}", error).as_str(),
-                    LogLevel::Error,
-                );
-                AuthUserResult::BaseError(Errors::SelfInternalError(Json(
-                    json!({"Error": "Something went wrong. Try again later"}),
-                )))
-            }
-            Ok(client) => {
-                let auth_service: ServiceData =
-                    (*self.services.read().expect("Poisoned, Should not happen"))
-                        .get(&Services::Auth)
-                        .expect("Should not fail")
-                        .clone();
-
-                let endpoint = "auth_user";
-
-                let response = client
-                    .post(format!(
-                        "http://{}:{}/{endpoint}",
-                        auth_service.service_host, auth_service.service_port
-                    ))
-                    .json(&AuthUserBody { email, password })
-                    .send()
-                    .await;
-                if let Ok(response) = response {
-                    match response.status() {
-                        StatusCode::OK => {
-                            #[derive(serde::Serialize, serde::Deserialize)]
-                            struct UserCreatedBody {
-                                token: String,
+        let mut auth_adapter = self.auth_adapter.lock().expect("Poisoned. Should not happed").clone();
+        match auth_adapter.auth_user(email, password).await {
+            Ok(response) => {
+                let user_result = response.into_inner();
+                match user_result.result {
+                    Some(result) => {
+                        use auth_user_result::Result as res;
+                        match result {
+                            res::Token(token) => results::AuthUserResult::UserAuthenticated { token },
+                            res::Error(error) => match error {
+                                err if err == AuthUserError::UserNotFound as i32 => results::AuthUserResult::NoUserFound,
+                                _ => unreachable!()
                             }
-                            match response.json::<UserCreatedBody>().await {
-                                Ok(body) => AuthUserResult::UserAuthenticated { token: body.token },
-                                Err(error) => {
-                                    self.log(format!("Auth service returned unexpectable body on new_user request. Error is \"{:?}\"", error).as_str(), LogLevel::Error);
-                                    AuthUserResult::BaseError(Errors::SelfInternalError(Json(
-                                        json!({"Error": "Error decoding respose from Auth:create_new_user"}),
-                                    )))
-                                }
+                            res::ServerError(server_error) => match server_error {
+                                err if (err == ServerError::DbError as i32) | (err == ServerError::InternalServerError as i32) => results::AuthUserResult::BaseError(Errors::AuthServiceInternalError),
+                                _ => unreachable!()
                             }
-                        }
-                        StatusCode::INTERNAL_SERVER_ERROR => {
-                            AuthUserResult::BaseError(Errors::AuthServiceInternalError)
-                        }
-                        StatusCode::NO_CONTENT => AuthUserResult::NoUserFound,
-                        StatusCode::NOT_FOUND => {
-                            self.log(
-                                format!("This endpoint is not found in auth service: {endpoint}")
-                                    .as_str(),
-                                LogLevel::CriticalError,
-                            );
-                            AuthUserResult::BaseError(Errors::NotFound)
-                        }
-                        code => {
-                            self.log(
-                                format!("Auth Service returned unexpectable status code: {}", code)
-                                    .as_str(),
-                                LogLevel::Error,
-                            );
-                            AuthUserResult::BaseError(Errors::SelfInternalError(Json(
-                                json!({"Error": "Something went wrong. Try again later"}),
-                            )))
                         }
                     }
-                } else {
-                    self.log("Auth service is not accessible", LogLevel::Error);
-                    AuthUserResult::BaseError(Errors::AuthServiceUnaccessible)
+                    None => unreachable!()
                 }
+            }
+            Err(_) => {
+                self.log("Auth Service unaccessible", LogLevel::Error);
+                results::AuthUserResult::BaseError(Errors::AuthServiceUnaccessible)
             }
         }
     }
