@@ -65,12 +65,11 @@ impl AppState {
         Ok(unsafe { self.database_adapter.get_all_user_limited(limit) }.await?)
     }
 
-    fn compare_passwords(&self, password: String, password_hash: String) -> bool {
-        let hash = argon2::password_hash::PasswordHash::new(password_hash.as_str())
-            .expect("Should not happen");
+    fn compare_passwords(&self, password: String, password_hash: String) -> Option<bool> {
+        let hash = argon2::password_hash::PasswordHash::new(password_hash.as_str()).ok()?;
         match self.argon.verify_password(password.as_bytes(), &hash) {
-            Ok(()) => true,
-            Err(_) => false,
+            Ok(()) => Some(true),
+            Err(_) => Some(false),
         }
     }
 
@@ -85,10 +84,10 @@ impl AppState {
         &self,
         email: String,
         password: String,
-    ) -> Result<sqlx::types::Uuid, Error> {
+    ) -> Result<String, Error> {
         match self.get_password_hash(password) {
             Some(hash) => match self.database_adapter.create_new_user(email, hash).await {
-                Ok(uuid) => Ok(uuid),
+                Ok(uuid) => Ok(self.get_jwt_token(uuid)),
                 Err(db_err) => Err(Error::DBError(db_err)),
             },
             None => Err(Error::HashingError),
@@ -120,17 +119,16 @@ impl AppState {
     pub(crate) async fn get_user_uuid(
         &self,
         email: String,
-        password_hash: String,
-    ) -> Result<sqlx::types::Uuid, BaseDBError> {
+        password: String,
+    ) -> Result<String, Error> {
         match self.database_adapter.get_user_by_email(email).await {
-            Ok((uuid, real_password_hash)) => {
-                if self.compare_passwords(password_hash, real_password_hash) {
-                    Ok(uuid)
-                } else {
-                    Err(BaseDBError::WrongPassword)
+            Ok((uuid, password_hash)) => {
+                match self.compare_passwords(password, password_hash) {
+                    Some(equal) => if equal { Ok(self.get_jwt_token(uuid)) } else { Err(Error::DBError(BaseDBError::WrongPassword)) },
+                    None => Err(Error::HashingError)
                 }
             }
-            Err(error) => Err(error),
+            Err(error) => Err(Error::DBError(error)),
         }
     }
 }

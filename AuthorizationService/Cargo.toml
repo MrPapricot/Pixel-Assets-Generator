@@ -14,4 +14,6 @@ hmac = {version = "0.13.0"}
 sha2 = {version = "0.11.0"}
 jsonwebtoken = {version = "10.3.0", features = ["rust_crypto"]}
 logger = {path = "../logger"}
+auth_rpc = {path = "../auth_rpc"}
+tonic = {version = "0.14.6", features = ["codegen"]}
 argon2 = {version = "0.5.3", features = ["std", "alloc", "password-hash"]}
