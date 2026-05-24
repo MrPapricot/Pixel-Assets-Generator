@@ -28,7 +28,7 @@ jobs:
 
       - name: Generate OpenAPI JSON
         working-directory: CommandProjectBackend
-        run: cargo run --release -- GEN_API
+        run: cargo run --release --bin create_api_docs
 
       - name: Prepare site directory
         run: |

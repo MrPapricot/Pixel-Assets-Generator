@@ -1,9 +1,11 @@
-use auth_rpc::auth::{AuthUserError, CreateUserError, HealthStatus, ServerError, auth_user_result, create_user_result};
+use crate::rpc_implementation::AuthAdapter;
+use auth_rpc::auth::{
+    AuthUserError, CreateUserError, HealthStatus, ServerError, auth_user_result, create_user_result,
+};
 use axum::Json;
 use logger::{LogLevel, Logger};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, RwLock};
-use crate::rpc_implementation::AuthAdapter;
 
 use crate::app_state::results::{AuthUserResult, Errors};
 
@@ -115,7 +117,11 @@ impl AppState {
 
     pub async fn check_services(&mut self) -> Vec<ServiceStatus> {
         let mut responses = tokio::task::JoinSet::new();
-        let mut auth_adapter = self.auth_adapter.lock().expect("Poisoned. Should not happed").clone();
+        let mut auth_adapter = self
+            .auth_adapter
+            .lock()
+            .expect("Poisoned. Should not happed")
+            .clone();
         responses.spawn(async move {
             match auth_adapter.health().await {
                 Ok(response) => {
@@ -125,7 +131,7 @@ impl AppState {
                         res if res == HealthStatus::Ok as i32 => status = Status::Working,
                         res if res == HealthStatus::Warning as i32 => status = Status::Warning,
                         res if res == HealthStatus::Error as i32 => status = Status::Error,
-                        _ => unreachable!()
+                        _ => unreachable!(),
                     }
                     ServiceStatus {
                         service_name: "Auth Service".to_string(),
@@ -133,20 +139,26 @@ impl AppState {
                         message: health_result.message,
                     }
                 }
-                Err(_) => {
-                    ServiceStatus {
-                        service_name: "Auth Service".to_string(),
-                        service_status: Status::NotFound,
-                        message: None,
-                    }
-                }
+                Err(_) => ServiceStatus {
+                    service_name: "Auth Service".to_string(),
+                    service_status: Status::NotFound,
+                    message: None,
+                },
             }
         });
         responses.join_all().await
     }
 
-    pub async fn create_new_user(&self, email: String, password: String) -> results::CreateUserResult {
-        let mut auth_adapter = self.auth_adapter.lock().expect("Poisoned. Should not happed").clone();
+    pub async fn create_new_user(
+        &self,
+        email: String,
+        password: String,
+    ) -> results::CreateUserResult {
+        let mut auth_adapter = self
+            .auth_adapter
+            .lock()
+            .expect("Poisoned. Should not happed")
+            .clone();
         match auth_adapter.create_user(email, password).await {
             Ok(response) => {
                 let user_result = response.into_inner();
@@ -156,24 +168,36 @@ impl AppState {
                         match result {
                             res::Token(token) => results::CreateUserResult::UserCreated { token },
                             res::Error(error) => match error {
-                                err if err == CreateUserError::EmailUsed as i32 => results::CreateUserResult::EmailUsed,
-                                _ => unreachable!()
-                            }
+                                err if err == CreateUserError::EmailUsed as i32 => {
+                                    results::CreateUserResult::EmailUsed
+                                }
+                                _ => unreachable!(),
+                            },
                             res::ServerError(server_error) => match server_error {
-                                err if (err == ServerError::DbError as i32) | (err == ServerError::InternalServerError as i32) => results::CreateUserResult::BaseError(Errors::AuthServiceInternalError),
-                                _ => unreachable!()
-                            }
+                                err if (err == ServerError::DbError as i32)
+                                    | (err == ServerError::InternalServerError as i32) =>
+                                {
+                                    results::CreateUserResult::BaseError(
+                                        Errors::AuthServiceInternalError,
+                                    )
+                                }
+                                _ => unreachable!(),
+                            },
                         }
                     }
-                    None => unreachable!()
+                    None => unreachable!(),
                 }
             }
-            Err(_) => results::CreateUserResult::BaseError(Errors::AuthServiceUnaccessible)
+            Err(_) => results::CreateUserResult::BaseError(Errors::AuthServiceUnaccessible),
         }
     }
 
     pub async fn get_user_token(&self, email: String, password: String) -> AuthUserResult {
-        let mut auth_adapter = self.auth_adapter.lock().expect("Poisoned. Should not happed").clone();
+        let mut auth_adapter = self
+            .auth_adapter
+            .lock()
+            .expect("Poisoned. Should not happed")
+            .clone();
         match auth_adapter.auth_user(email, password).await {
             Ok(response) => {
                 let user_result = response.into_inner();
@@ -181,18 +205,28 @@ impl AppState {
                     Some(result) => {
                         use auth_user_result::Result as res;
                         match result {
-                            res::Token(token) => results::AuthUserResult::UserAuthenticated { token },
+                            res::Token(token) => {
+                                results::AuthUserResult::UserAuthenticated { token }
+                            }
                             res::Error(error) => match error {
-                                err if err == AuthUserError::UserNotFound as i32 => results::AuthUserResult::NoUserFound,
-                                _ => unreachable!()
-                            }
+                                err if err == AuthUserError::UserNotFound as i32 => {
+                                    results::AuthUserResult::NoUserFound
+                                }
+                                _ => unreachable!(),
+                            },
                             res::ServerError(server_error) => match server_error {
-                                err if (err == ServerError::DbError as i32) | (err == ServerError::InternalServerError as i32) => results::AuthUserResult::BaseError(Errors::AuthServiceInternalError),
-                                _ => unreachable!()
-                            }
+                                err if (err == ServerError::DbError as i32)
+                                    | (err == ServerError::InternalServerError as i32) =>
+                                {
+                                    results::AuthUserResult::BaseError(
+                                        Errors::AuthServiceInternalError,
+                                    )
+                                }
+                                _ => unreachable!(),
+                            },
                         }
                     }
-                    None => unreachable!()
+                    None => unreachable!(),
                 }
             }
             Err(_) => {

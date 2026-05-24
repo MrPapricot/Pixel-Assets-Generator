@@ -15,3 +15,8 @@ reqwest = {version = "0.11.0", features = ["json", "rustls-tls"], default-featur
 utoipa-swagger-ui = {version = "9.0.2", features = ["axum"]}
 utoipa = {version="5.5.0", features = ["axum_extras"]}
 tonic = {version = "0.14.6"}
+
+
+[[bin]]
+name = "create_api_docs"
+path = "src/create_api.rs"

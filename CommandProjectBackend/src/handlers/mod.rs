@@ -76,7 +76,9 @@ pub(crate) async fn healthcheck(State(state): State<AppState>) -> (StatusCode, J
 
 #[derive(utoipa::ToSchema, serde::Serialize)]
 struct UserSuccess {
-    #[schema(example = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNzA4MzQ1MTIzLCJleHAiOjE3MDgzNTUxMjN9.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c")]
+    #[schema(
+        example = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNzA4MzQ1MTIzLCJleHAiOjE3MDgzNTUxMjN9.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+    )]
     token: String,
 }
 
@@ -102,10 +104,11 @@ pub(crate) async fn create_user_handler(
     match state.create_new_user(email, password).await {
         CUR::EmailUsed => (StatusCode::CONFLICT, Json(json!("Email is already used"))),
         CUR::BaseError(error) => match error {
-            Errors::AuthServiceInternalError
-            | Errors::AuthServiceUnaccessible => (
+            Errors::AuthServiceInternalError | Errors::AuthServiceUnaccessible => (
                 StatusCode::BAD_GATEWAY,
-                Json(json!("Some services are not working properly. Try again later")),
+                Json(json!(
+                    "Some services are not working properly. Try again later"
+                )),
             ),
             Errors::SelfInternalError(_) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -140,10 +143,11 @@ pub(crate) async fn auth_user_handler(
             Json(json!("No user with such email or password")),
         ),
         AUR::BaseError(error) => match error {
-            Errors::AuthServiceInternalError
-            | Errors::AuthServiceUnaccessible => (
+            Errors::AuthServiceInternalError | Errors::AuthServiceUnaccessible => (
                 StatusCode::BAD_GATEWAY,
-                Json(json!("Some services are not working properly. Try again later")),
+                Json(json!(
+                    "Some services are not working properly. Try again later"
+                )),
             ),
             Errors::SelfInternalError(_) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
