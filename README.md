@@ -14,7 +14,7 @@ cd Docker
 docker compose up --build
 ```
 
-## Без использования Docker (требует cargo и база данных с необходимыми таблицами")
+## Без использования Docker (требует protoc, cargo и PosgreSQL база данных с необходимыми таблицами)
 
 ``` bash
 cd AuthorizationService && cargo run && cd ../
