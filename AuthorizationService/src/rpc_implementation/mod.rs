@@ -1,8 +1,8 @@
 use crate::app_state::{AppState, Error};
 use crate::database_adapter::custom_db_error::BaseDBError;
 use auth_rpc::auth::{
-    AuthUserError, AuthUserResult, CreateUserError, CreateUserResult, HealthResult, ServerError,
-    UserBody, auth_server::Auth, auth_user_result, create_user_result, HealthStatus
+    AuthUserError, AuthUserResult, CreateUserError, CreateUserResult, HealthResult, HealthStatus,
+    ServerError, UserBody, auth_server::Auth, auth_user_result, create_user_result,
 };
 use tonic::{Request, Response, Status};
 
@@ -12,9 +12,7 @@ pub struct AuthService {
 
 impl AuthService {
     pub fn new(state: AppState) -> Self {
-        AuthService {
-            state
-        }
+        AuthService { state }
     }
 }
 
@@ -82,11 +80,10 @@ impl Auth for AuthService {
                 status: HealthStatus::Ok as i32,
                 message: None,
             }))
-        }
-        else {
+        } else {
             Ok(Response::new(HealthResult {
                 status: HealthStatus::Error as i32,
-                message: Some(String::from("Database isn't working"))
+                message: Some(String::from("Database isn't working")),
             }))
         }
     }

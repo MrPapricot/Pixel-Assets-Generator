@@ -122,12 +122,16 @@ impl AppState {
         password: String,
     ) -> Result<String, Error> {
         match self.database_adapter.get_user_by_email(email).await {
-            Ok((uuid, password_hash)) => {
-                match self.compare_passwords(password, password_hash) {
-                    Some(equal) => if equal { Ok(self.get_jwt_token(uuid)) } else { Err(Error::DBError(BaseDBError::WrongPassword)) },
-                    None => Err(Error::HashingError)
+            Ok((uuid, password_hash)) => match self.compare_passwords(password, password_hash) {
+                Some(equal) => {
+                    if equal {
+                        Ok(self.get_jwt_token(uuid))
+                    } else {
+                        Err(Error::DBError(BaseDBError::WrongPassword))
+                    }
                 }
-            }
+                None => Err(Error::HashingError),
+            },
             Err(error) => Err(Error::DBError(error)),
         }
     }

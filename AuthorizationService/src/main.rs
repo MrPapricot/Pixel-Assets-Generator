@@ -6,7 +6,7 @@ mod app_state;
 mod database_adapter;
 mod jwt_token_manager;
 mod postgres_database_adapter;
-use auth_rpc::auth::auth_server::AuthServer;
+use auth_rpc::auth::auth_server::{Auth, AuthServer};
 use logger::{LogLevel, Logger, simple_logger::SimpleLogger};
 use tonic::transport::Server;
 mod rpc_implementation;
@@ -172,7 +172,20 @@ async fn main() {
 
     let auth_server = AuthServer::new(auth_service);
 
-    let addr = SocketAddr::new(IpAddr::V4(service_host.parse::<Ipv4Addr>().unwrap()), service_port);
+    let addr = SocketAddr::new(
+        IpAddr::V4(service_host.parse::<Ipv4Addr>().unwrap()),
+        service_port,
+    );
 
-    Server::builder().add_service(auth_server).serve(addr).await.unwrap();
+    let (health_reporter, health_server) = tonic_health::server::health_reporter();
+    health_reporter
+        .set_serving::<AuthServer<AuthService>>()
+        .await;
+
+    Server::builder()
+        .add_service(auth_server)
+        .add_service(health_server)
+        .serve(addr)
+        .await
+        .unwrap();
 }

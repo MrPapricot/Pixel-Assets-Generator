@@ -75,9 +75,7 @@ pub(crate) enum Status {
 #[schema(example = json!({
     "Name": "Auth Service",
     "Status": "Warning",
-    "JSONMessage": {
-        "Warning": "Database responds slowly"
-    }
+    "Message": "Database responds slow"
 }))]
 pub(crate) struct ServiceStatus {
     #[serde(rename = "Name")]
