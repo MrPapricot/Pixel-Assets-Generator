@@ -2,10 +2,11 @@ use crate::app_state::{
     AppState, ServiceStatus, Status,
     results::{AuthUserResult, CreateUserResult, Errors},
 };
-use axum::Json;
+use auth_rpc::auth::TokenValidityStatus;
 use axum::extract::{Json as JsonExtractor, State};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
+use axum::{Json, http::HeaderMap};
 use logger::LogLevel;
 use serde;
 use serde_json::json;
@@ -20,9 +21,17 @@ pub(crate) struct UserBody {
     password: String,
 }
 
+#[derive(serde::Deserialize, utoipa::ToSchema)]
+pub(crate) struct CheckTokenHeader {
+    #[schema(
+        example = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNzA4MzQ1MTIzLCJleHAiOjE3MDgzNTUxMjN9.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+    )]
+    token: String,
+}
+
 #[derive(utoipa::OpenApi)]
 #[openapi(
-    paths(healthcheck, create_user_handler, auth_user_handler),
+    paths(healthcheck, create_user_handler, auth_user_handler, check_token),
     tags(
         (name="TESTING", description="Для тестирования. Не использовать"),
         (name="API", description="Для обычного использования"),
@@ -155,5 +164,69 @@ pub(crate) async fn auth_user_handler(
             ),
         },
         AUR::UserAuthenticated { token } => (StatusCode::OK, Json(json!({"token": token}))),
+    }
+}
+
+#[derive(serde::Serialize, utoipa::ToSchema)]
+pub enum CheckTokenResult {
+    InvalidFormat,
+    Expired,
+    Valid,
+    Invalid,
+}
+
+#[utoipa::path(
+    get,
+    path = "/check_token",
+    tags = ["API"],
+    description = "Проверяет валидность токена, переданного в заголовке Authorization.",
+    params(
+        ("Authorization" = String, Header, description = "JWT токен для проверки")
+    ),
+    responses(
+        (status = 200, description = "Результат проверки токена", body = CheckTokenResult),
+        (status = 401, description = "Заголовок Authorization отсутствует или содержит недопустимые символы", body = String, example = "Header \"Authorization\" was not provided"),
+        (status = 502, description = "Сервис авторизации недоступен или отвечает некорректно", body = String, example = "Some services are not working properly. Try again later"),
+    )
+)]
+pub(crate) async fn check_token(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> impl IntoResponse {
+    let token = headers.get("Authorization");
+    match token {
+        Some(token) => match token.to_str() {
+            Ok(token) => match state.check_token(token.to_string()).await {
+                crate::app_state::results::CheckToken::TokenStatus { status } => {
+                    let res: CheckTokenResult;
+                    match status {
+                        TokenValidityStatus::Valid => res = CheckTokenResult::Valid,
+                        TokenValidityStatus::Invalid => res = CheckTokenResult::Invalid,
+                        TokenValidityStatus::InvalidFormat => res = CheckTokenResult::InvalidFormat,
+                        TokenValidityStatus::Expired => res = CheckTokenResult::Expired,
+                    };
+                    (StatusCode::OK, Json(json!(res)))
+                }
+                crate::app_state::results::CheckToken::BaseError(error) => match error {
+                    Errors::AuthServiceInternalError | Errors::AuthServiceUnaccessible => (
+                        StatusCode::BAD_GATEWAY,
+                        Json(json!(
+                            "Some services are not working properly. Try again later"
+                        )),
+                    ),
+                    Errors::SelfInternalError(_) => unreachable!(),
+                },
+            },
+            Err(_) => (
+                StatusCode::UNAUTHORIZED,
+                Json(json!(
+                    "Header \"Authorization\" contains invalid ASCII characters"
+                )),
+            ),
+        },
+        None => (
+            StatusCode::UNAUTHORIZED,
+            Json(json!("Header \"Authorization\" was not provided")),
+        ),
     }
 }

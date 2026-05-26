@@ -1,20 +1,17 @@
 use crate::rpc_implementation::AuthAdapter;
 use auth_rpc::auth::{
-    AuthUserError, CreateUserError, HealthStatus, ServerError, auth_user_result, create_user_result,
+    AuthUserError, CreateUserError, HealthStatus, ServerError, auth_user_result, TokenValidityStatus,
+    create_user_result, token_validity,
 };
 use axum::Json;
 use logger::{LogLevel, Logger};
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, Mutex};
 
-use crate::app_state::results::{AuthUserResult, Errors};
-
-#[derive(Clone, PartialEq, Eq, Hash)]
-pub(crate) enum Services {
-    Auth,
-}
+use crate::app_state::results::Errors;
 
 pub(crate) mod results {
+    use auth_rpc::auth::TokenValidityStatus;
+
     use super::Json;
 
     pub(crate) enum Errors {
@@ -32,6 +29,11 @@ pub(crate) mod results {
     pub(crate) enum AuthUserResult {
         UserAuthenticated { token: String },
         NoUserFound,
+        BaseError(Errors),
+    }
+
+    pub(crate) enum CheckToken {
+        TokenStatus { status: TokenValidityStatus },
         BaseError(Errors),
     }
 }
@@ -89,19 +91,13 @@ pub(crate) struct ServiceStatus {
 #[derive(Clone)]
 pub(crate) struct AppState {
     logger: Arc<Mutex<dyn Logger>>,
-    services: Arc<RwLock<HashMap<Services, ServiceData>>>,
     auth_adapter: Arc<Mutex<AuthAdapter>>,
 }
 
 impl AppState {
-    pub fn new(
-        logger: Arc<Mutex<dyn Logger>>,
-        services: Arc<RwLock<HashMap<Services, ServiceData>>>,
-        auth_adapter: Arc<Mutex<AuthAdapter>>,
-    ) -> AppState {
+    pub fn new(logger: Arc<Mutex<dyn Logger>>, auth_adapter: Arc<Mutex<AuthAdapter>>) -> AppState {
         AppState {
             logger: logger.clone(),
-            services: services.clone(),
             auth_adapter: auth_adapter.clone(),
         }
     }
@@ -190,7 +186,7 @@ impl AppState {
         }
     }
 
-    pub async fn get_user_token(&self, email: String, password: String) -> AuthUserResult {
+    pub async fn get_user_token(&self, email: String, password: String) -> results::AuthUserResult {
         let mut auth_adapter = self
             .auth_adapter
             .lock()
@@ -230,6 +226,49 @@ impl AppState {
             Err(_) => {
                 self.log("Auth Service unaccessible", LogLevel::Error);
                 results::AuthUserResult::BaseError(Errors::AuthServiceUnaccessible)
+            }
+        }
+    }
+
+    pub async fn check_token(&self, token: String) -> results::CheckToken {
+        let mut auth_adapter = self
+            .auth_adapter
+            .lock()
+            .expect("Poisoned. Should not happed")
+            .clone();
+        match auth_adapter.check_token(token).await {
+            Ok(response) => {
+                let user_result = response.into_inner();
+                match user_result.result {
+                    Some(result) => {
+                        use token_validity::Result as res;
+                        use TokenValidityStatus as TVS;
+                        match result {
+                            res::Status(status) => match status {
+                                status if status == TVS::InvalidFormat as i32 => results::CheckToken::TokenStatus { status: TVS::InvalidFormat },
+                                status if status == TVS::Expired as i32 => results::CheckToken::TokenStatus { status: TVS::Expired },
+                                status if status == TVS::Valid as i32 => results::CheckToken::TokenStatus { status: TVS::Valid },
+                                status if status == TVS::Invalid as i32 => results::CheckToken::TokenStatus { status: TVS::Invalid },
+                                _ => unreachable!()
+                            }
+                            res::ServerError(server_error) => match server_error {
+                                err if (err == ServerError::DbError as i32)
+                                    | (err == ServerError::InternalServerError as i32) =>
+                                {
+                                    results::CheckToken::BaseError(
+                                        Errors::AuthServiceInternalError,
+                                    )
+                                }
+                                _ => unreachable!(),
+                            },
+                        }
+                    }
+                    None => unreachable!(),
+                }
+            }
+            Err(_) => {
+                self.log("Auth Service unaccessible", LogLevel::Error);
+                results::CheckToken::BaseError(Errors::AuthServiceUnaccessible)
             }
         }
     }

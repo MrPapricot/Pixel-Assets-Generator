@@ -46,4 +46,9 @@ pub(crate) trait DBAdapter: Sync + Send {
         &'a self,
         email: String,
     ) -> Pin<Box<dyn Future<Output = Result<(sqlx::types::Uuid, String), BaseDBError>> + Send + 'a>>;
+
+    fn check_uuid_exists<'a>(
+        &'a self,
+        uuid: sqlx::types::Uuid,
+    ) -> Pin<Box<dyn Future<Output = Result<bool, BaseDBError>> + Send + 'a>>;
 }

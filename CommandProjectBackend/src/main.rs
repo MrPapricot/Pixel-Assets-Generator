@@ -1,6 +1,5 @@
 use axum::routing::{get, post};
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, Mutex};
 use std::env;
 
 mod app_state;
@@ -9,7 +8,6 @@ mod rpc_implementation;
 
 use logger::{LogLevel, Logger, simple_logger::SimpleLogger};
 
-use crate::app_state::{ServiceData, Services};
 use crate::rpc_implementation::AuthAdapter;
 use app_state::AppState;
 
@@ -86,15 +84,6 @@ async fn main() {
                 }
     };
 
-    let services: HashMap<Services, ServiceData> = HashMap::from([(
-        Services::Auth,
-        ServiceData::new(
-            "Auth Service".to_string(),
-            auth_host.clone(),
-            auth_port.clone(),
-        ),
-    )]);
-
     let auth_adapter = AuthAdapter::new(
         format!("http://{auth_host}:{auth_port}")
             .parse()
@@ -104,7 +93,6 @@ async fn main() {
 
     let state = AppState::new(
         Arc::new(Mutex::new(logger)),
-        Arc::new(RwLock::new(services)),
         Arc::new(Mutex::new(auth_adapter)),
     );
 
@@ -125,6 +113,7 @@ async fn main() {
         .route("/health", get(handlers::healthcheck))
         .route("/create_user", post(handlers::create_user_handler))
         .route("/auth_user", post(handlers::auth_user_handler))
+        .route("/check_token", get(handlers::check_token))
         .merge(
             utoipa_swagger_ui::SwaggerUi::new("/swagger-ui")
                 .url("/api-docs/openapi.json", handlers::ApiDoc::openapi()),

@@ -12,6 +12,13 @@ pub(crate) enum Error {
     HashingError,
 }
 
+pub(crate) enum TokenValidity {
+    InvalidFormat,
+    Valid,
+    Invalid,
+    Expired,
+}
+
 #[derive(Clone)]
 pub(crate) struct AppState {
     logger: Arc<Mutex<dyn Logger>>,
@@ -57,7 +64,6 @@ impl AppState {
             .log(message, log_level);
     }
 
-    #[allow(dead_code)]
     pub(crate) async unsafe fn get_all_users_limited(
         &self,
         limit: u64,
@@ -114,6 +120,30 @@ impl AppState {
 
     pub(crate) async fn check_database_health(&self) -> bool {
         self.database_adapter.is_healthy().await
+    }
+
+    pub(crate) async fn check_token_validity(
+        &self,
+        token: String,
+    ) -> Result<TokenValidity, BaseDBError> {
+        match self.get_uuid_from_token(token.as_bytes()) {
+            Ok(uuid) => {
+                match self.database_adapter.check_uuid_exists(uuid).await {
+                    Ok(valid) => match valid {
+                        true => Ok(TokenValidity::Valid),
+                        false => Ok(TokenValidity::Invalid),
+                    }
+                    Err(error) => Err(error)
+                }
+            }
+            Err(error) => {
+                use JWTDecodingError as DE;
+                match error {
+                    DE::TokenExpired => Ok(TokenValidity::Expired),
+                    DE::InvalidToken | DE::NoUUID => Ok(TokenValidity::InvalidFormat),
+                }
+            }
+        }
     }
 
     pub(crate) async fn get_user_uuid(

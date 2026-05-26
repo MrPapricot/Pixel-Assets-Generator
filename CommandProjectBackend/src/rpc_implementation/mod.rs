@@ -1,5 +1,5 @@
 use auth_rpc::auth::{
-    AuthUserResult, CreateUserResult, HealthResult, UserBody, auth_client::AuthClient,
+    AuthUserResult, CheckTokenBody, CreateUserResult, HealthResult, TokenValidity, UserBody, auth_client::AuthClient
 };
 use tonic::{Request, Response, Status};
 
@@ -46,5 +46,9 @@ impl AuthAdapter {
 
     pub async fn health(&mut self) -> Result<Response<HealthResult>, Status> {
         self.client.health(Request::new(())).await
+    }
+
+    pub async fn check_token(&mut self, token: String) -> Result<Response<TokenValidity>, Status> {
+        self.client.check_token(Request::new(CheckTokenBody { token })).await
     }
 }

@@ -21,12 +21,6 @@ impl PostgresDBAdapter {
 }
 
 impl DBAdapter for PostgresDBAdapter {
-    // async unsafe fn test_get_all_users(
-    //     &self,
-    //     limit: u64,
-    // ) -> Result<Vec<models::User>, sqlx::Error> {
-    //     todo!();
-    // }
     unsafe fn get_all_user_limited<'a>(
         &'a self,
         limit: u64,
@@ -125,6 +119,24 @@ impl DBAdapter for PostgresDBAdapter {
                     None => Err(BaseDBError::RowNotFound),
                 },
                 Err(error) => Err(BaseDBError::BaseError(error)),
+            }
+        })
+    }
+
+    fn check_uuid_exists<'a>(
+        &'a self,
+        uuid: sqlx::types::Uuid,
+    ) -> Pin<Box<dyn Future<Output = Result<bool, BaseDBError>> + Send + 'a>> {
+        Box::pin(async move {
+            match sqlx::query_scalar::<Postgres, bool>(
+                "SELECT EXISTS(SELECT 1 FROM users WHERE uuid = $1)",
+            )
+            .bind(uuid)
+            .fetch_one(&self.pool)
+            .await
+            {
+                Ok(exists) => Ok(exists),
+                Err(err) => Err(BaseDBError::BaseError(err)),
             }
         })
     }
