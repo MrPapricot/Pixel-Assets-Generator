@@ -1,0 +1,5 @@
+# Для всех .sh файлов использовать LF
+*.sh text eol=lf
+
+# Для всех скриптов инициализации БД
+Database/init_database.d/*.sh text eol=lf
