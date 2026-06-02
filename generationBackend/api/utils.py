@@ -407,7 +407,7 @@ class PixelArtTransformer:
         """
         Отправляет изображение и промпт в ComfyUI API с workflow Qwen Image Edit
         """
-        comfyui_url = self.config.get('comfyui', {}).get('url', "http://127.0.0.1:8188")
+        comfyui_url = self.config.get('comfyui', {}).get('url', os.getenv("COMFYUI_URL", "http://comfyui:8188"))
 
         # Путь к вашему workflow файлу
         script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -496,7 +496,7 @@ class PixelArtTransformer:
             print(f"❌ Неожиданная ошибка: {e}")
             return img
 
-    def _wait_for_comfyui_result(self, comfyui_url: str, prompt_id: str, timeout: int = 10800) -> Image.Image:
+    def _wait_for_comfyui_result(self, comfyui_url: str, prompt_id: str, timeout: int = 108000) -> Image.Image:
         """
         Ожидание и получение результата из ComfyUI
 

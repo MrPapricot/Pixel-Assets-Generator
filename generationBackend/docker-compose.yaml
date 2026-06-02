@@ -1,0 +1,65 @@
+services:
+
+  comfyui:
+    image: jimlee2048/comfyui-docker:v0.22.0
+    container_name: pixel-comfyui
+    restart: unless-stopped
+    mem_limit: 60g
+    memswap_limit: 120g
+    mem_reservation: 30g
+    volumes:
+      # Модели должны быть в правильной структуре
+      - ./comfyui/models/diffusion_models:/workspace/ComfyUI/models/diffusion_models
+      - ./comfyui/models/text_encoders:/workspace/ComfyUI/models/text_encoders
+      - ./comfyui/models/vae:/workspace/ComfyUI/models/vae
+      - ./comfyui/models/loras:/workspace/ComfyUI/models/loras
+      # Входные/выходные файлы
+      - ./comfyui/input:/workspace/ComfyUI/input
+      - ./comfyui/output:/workspace/ComfyUI/output
+      - ./comfyui/custom_nodes:/workspace/ComfyUI/custom_nodes
+      - ./scripts:/scripts:ro
+    environment:
+      - USE_CPU=${USE_CPU:-true}
+      - DOWNLOAD_MODELS=${DOWNLOAD_MODELS:-false}
+      - COMFYUI_PORT=${COMFYUI_PORT:-8188}
+    entrypoint: ["/bin/bash", "/scripts/start_comfyui.sh"]
+    networks:
+      - private-network
+
+  # API сервис
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: pixel-api
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./uploads:/app/uploads
+      - ./results:/app/results
+      - ./api:/app
+    environment:
+      - HOST=${HOST:-0.0.0.0}
+      - PORT=${API_PORT:-8001}
+      - COMFYUI_URL=${COMFYUI_URL:-http://comfyui:8188}
+      - ALLOWED_IPS=${ALLOWED_IPS:-127.0.0.1}
+      - RELOAD=${RELOAD:-false}
+    networks:
+      - pixel-network
+      - private-network
+    depends_on:
+      - comfyui
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  private-network:
+    driver: bridge
+    internal: true
+  pixel-network:
+    driver: bridge

@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+
+# ComfyUI - исключаем большие папки
+comfyui/models/
+comfyui/input/
+comfyui/output/
+comfyui/temp/
+comfyui/custom_nodes/
+
+# Модели (они будут монтироваться как volumes)
+*.safetensors
+*.ckpt
+*.pth
+*.bin
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Git
+.git/
+.gitignore
+
+# Результаты и загрузки
+uploads/
+results/
+
+# Логи
+*.log
+
+# Docker файлы
+Dockerfile*
+docker-compose*.yaml
+.dockerignore

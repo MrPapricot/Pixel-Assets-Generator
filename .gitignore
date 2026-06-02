@@ -12,6 +12,8 @@ __pycache__/
 # Временные файлы
 generationBackend/api/uploads/
 generationBackend/api/results/
+generationBackend/uploads/
+generationBackend/results/
 *.jpg
 *.png
 

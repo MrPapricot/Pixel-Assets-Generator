@@ -1,0 +1,41 @@
+# Используем официальный образ Python
+FROM python:3.10-slim
+
+# Устанавливаем системные зависимости
+RUN apt-get update && apt-get install -y \
+    curl \
+    libgl1 \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Устанавливаем рабочую директорию
+WORKDIR /app
+
+# Копируем зависимости
+COPY api/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Копируем код приложения
+COPY api/ .
+COPY api/app ./app
+COPY api/utils.py .
+
+# Создаем директории для файлов
+RUN mkdir -p uploads results
+
+# Открываем порт API
+EXPOSE 8001
+
+# Переменные окружения по умолчанию
+ENV HOST=0.0.0.0
+ENV PORT=8001
+ENV COMFYUI_URL=http://comfyui:8188
+ENV ALLOWED_IPS=""
+ENV RELOAD=false
+
+# Запуск приложения
+CMD ["python", "run.py"]

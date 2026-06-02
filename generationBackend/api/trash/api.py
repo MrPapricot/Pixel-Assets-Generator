@@ -1,3 +1,4 @@
+import ipaddress
 import json
 import os
 import uuid
@@ -5,15 +6,37 @@ import time
 from typing import Optional, Dict, Any
 from enum import Enum
 
-from fastapi import FastAPI, File, UploadFile, Form, HTTPException, BackgroundTasks
+from fastapi import FastAPI, File, UploadFile, Form, HTTPException, BackgroundTasks, APIRouter
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 import uvicorn
 
-# Импортируем ваш класс
-# Предполагаем, что utils.py лежит в той же директории
 from utils import PixelArtTransformer
+
+from fastapi import Depends, Request
+
+
+def check_ip_allowed(request: Request):
+    allowed_ips = [
+        "109.123.185.110",
+    ]
+
+    client_ip = request.client.host
+    forwarded = request.headers.get("X-Forwarded-For")
+    if forwarded:
+        client_ip = forwarded.split(",")[0].strip()
+
+    # Проверка IP
+    ip_obj = ipaddress.ip_address(client_ip)
+    for allowed in allowed_ips:
+        if '/' in allowed:
+            if ip_obj in ipaddress.ip_network(allowed, strict=False):
+                return True
+        elif client_ip == allowed:
+            return True
+
+    raise HTTPException(status_code=403, detail=f"Access denied for IP: {client_ip}")
 
 # ============== Модели данных для API ==============
 
@@ -108,7 +131,8 @@ class TaskStatus(BaseModel):
 app = FastAPI(
     title="Pixel Art Transformer API",
     description="API для преобразования изображений в пиксель-арт с использованием AI",
-    version="1.0.0"
+    version="1.0.0",
+    dependencies=[Depends(check_ip_allowed)]
 )
 
 # Добавляем CORS middleware
@@ -124,8 +148,8 @@ app.add_middleware(
 tasks_store: Dict[str, TaskStatus] = {}
 
 # Директории для хранения файлов
-UPLOAD_DIR = "uploads"
-RESULTS_DIR = "results"
+UPLOAD_DIR = "../uploads"
+RESULTS_DIR = "../results"
 
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(RESULTS_DIR, exist_ok=True)
@@ -403,7 +427,7 @@ async def get_config_presets():
 if __name__ == "__main__":
     uvicorn.run(
         "api:app",
-        host="127.0.0.1",
+        host="0.0.0.0",
         port=8001,
         reload=False,
         log_level="info"
