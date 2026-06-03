@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel-Assets-Generator</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="shortcut icon" href="./images/tileset.png" type="image/svg/png" />
+
+</head>
+
+<body>
+
+    <!-- VIEW: Авторизация -->
+    <div id="auth-view">
+        <div class="auth-container">
+            <h2 id="auth-title">Вход в систему</h2>
+            <form id="auth-form">
+                <div class="form-group">
+                    <label>Электронная почта</label>
+                    <input type="email" id="email" required placeholder="user@example.com" autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label>Пароль</label>
+                    <input type="password" id="password" required placeholder=""
+                        autocomplete="current-password">
+                </div>
+                <div class="form-group hidden" id="confirm-password-group">
+                    <label>Повторите пароль</label>
+                    <input type="password" id="confirm-password" placeholder="" autocomplete="new-password">
+                </div>
+                <button type="submit" class="btn" id="auth-submit-btn">Войти</button>
+            </form>
+            <div class="status-msg" id="auth-status"></div>
+            <div class="toggle-auth" id="toggle-auth">Нет аккаунта? Зарегистрироваться</div>
+        </div>
+    </div>
+
+    <!-- VIEW: Основное приложение -->
+    <div id="app-view">
+        <header>
+            <div
+                style="font-weight: bold; color: var(--accent); font-size: 1.2rem; display: flex; align-items: center; gap: 0.5rem;">
+                <span style="font-size: 1.5rem;"></span>
+                Pixel-Assets-Generator
+            </div>
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <span id="user-email-display" style="color: var(--text-muted);"></span>
+                <button class="btn btn-sm btn-secondary" id="logout-btn" style="padding: 0.5rem 1.5rem;">Выйти</button>
+            </div>
+        </header>
+        <div class="main-layout">
+            <!-- Левая панель -->
+            <div class="panel panel-left">
+                <h3>Загрузка</h3>
+                <input type="file" id="image-upload" accept="image/*" multiple style="display: none;">
+                <button class="btn" onclick="document.getElementById('image-upload').click()">Загрузить
+                    изображение</button>
+                <div class="uploaded-list" id="uploaded-list"></div>
+
+                <h3>Настройки</h3>
+                <div class="form-group">
+                    <label>Разрешение</label>
+                    <select id="resolution">
+                        <option value="16">16×16</option>
+                        <option value="24">24×24</option>
+                        <option value="32" selected>32×32</option>
+                        <option value="48">48×48</option>
+                        <option value="64">64×64</option>
+                        <option value="128">128×128</option>
+                    </select>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                    <div class="form-group">
+                        <label>Цветов</label>
+                        <select id="color-count">
+                            <option value="4">4</option>
+                            <option value="8">8</option>
+                            <option value="16" selected>16</option>
+                            <option value="256">256</option>
+                            <option value="0">∞</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Контур</label>
+                        <select id="outline-count">
+                            <option value="4">4</option>
+                            <option value="8">8</option>
+                            <option value="16" selected>16</option>
+                            <option value="256">256</option>
+                            <option value="0">∞</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Тип объекта</label>
+                    <select id="object-type">
+                        <option value="object">Объект</option>
+                        <option value="wall">Стена</option>
+                    </select>
+                </div>
+
+                <h3>Действия</h3>
+                <button class="btn" id="close-contour-btn">Генерировать спрайт</button>
+                <button class="btn btn-secondary" id="clear-selection-btn">Очистить выделение</button>
+
+                <h3>Тайлсеты</h3>
+                <button class="btn btn-secondary" id="generate-tileset-btn">Создать тайлсет</button>
+                <button class="btn btn-secondary" id="download-album-btn">Скачать альбом</button>
+            </div>
+
+            <!-- Центральная панель -->
+            <div class="workspace" id="workspace">
+                <div id="empty-workspace-msg">
+                    <div style="font-size: 4rem; margin-bottom: 1rem;"></div>
+                    Загрузите изображение для начала работы
+                </div>
+                <div class="image-container hidden" id="image-container">
+                    <img id="active-image" src="" alt="Active">
+                    <canvas id="selection-canvas" class="selection-canvas"></canvas>
+                </div>
+            </div>
+
+            <!-- Правая панель -->
+            <div class="panel panel-right">
+                <div style="display: flex; border-bottom: 2px solid var(--border); margin-bottom: 1rem;">
+                    <div
+                        style="flex: 1; text-align: center; padding: 0.5rem; color: var(--accent); border-bottom: 2px solid var(--accent); cursor: pointer;">
+                        АЛЬБОМ</div>
+                    <div
+                        style="flex: 1; text-align: center; padding: 0.5rem; color: var(--text-muted); cursor: pointer;">
+                        ТАЙЛСЕТЫ</div>
+                </div>
+                <div class="album-grid" id="album-grid"></div>
+                <div id="album-empty"
+                    style="text-align: center; color: var(--text-muted); margin-top: 2rem; font-size: 0.9rem;">
+                    Альбом пуст. Сгенерируйте спрайт и сохраните.
+                </div>
+
+                <div class="tileset-area">
+                    <h3>Предпросмотр тайлсета</h3>
+                    <canvas id="tileset-canvas" class="tileset-canvas" width="256" height="256"></canvas>
+                    <button class="btn btn-sm" id="download-tileset-btn" style="margin-top: 0.5rem;">Скачать
+                        тайлсет</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+
+</body>
+
+</html>
